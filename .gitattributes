@@ -1,0 +1,3 @@
+*.ipynb -linguist-detectable
+*.nb -linguist-detectable
+*.wls linguist-language=Mathematica
