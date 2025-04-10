@@ -57,7 +57,7 @@ ClearAll["Global`*"]
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
-pOftFilePath = "/Users/markolalovic/dev/ho_contagion/results/pOftMatrixExpSimplified.mx"
+pOftFilePath = "/Users/markolalovic/dev/ho_contagion/results/pOftMatrixExpSimplified.mx";
 
 Nval = 4; (* number of nodes *)
 
@@ -96,7 +96,7 @@ Print["LeafCount using MatrixExp: ", LeafCount[pOftMatrixExp]]; (* 34722 ?? *)
 {eigenvalues, eigenvectors} = Eigensystem[matrixQ];
 matrixU = Transpose[eigenvectors];
 matrixUinv = Inverse[matrixU]; (* this can give large expression *)
-Print["Inverse of U found"]
+Print["Inverse of U found"];
 
 (* take e^{D \, t} for diagonal matrix `matrixD = [ eigenvals d_{ii} ]_{i} t` *)
 expDt = DiagonalMatrix[Exp[eigenvalues t]];
@@ -107,7 +107,7 @@ Print["Check Q = U D U^-1: ",
    matrixQ == matrixU . DiagonalMatrix[eigenvalues] . matrixUinv]
 ];
 
-Print["\nCalculating p(t) using eigen decomposition U Exp[ D t ] U^-1 p0 ... "]
+Print["\nCalculating p(t) using eigen decomposition U Exp[ D t ] U^-1 p0 ... "];
 pOftEigen = matrixU . expDt . matrixUinv . p0;
 Print["\nFound symbolic solution p(t) = U Exp[ D t ] U^-1 p0 "]; 
 Print["LeafCount using eigendecomposition: ", LeafCount[pOftEigen]]; (* 430767 ?? *)
@@ -161,13 +161,13 @@ plotProbs = Plot[Evaluate[pOftAtParamValues], {t, 0, tMax},
   AxesLabel -> {"Time t", "Probability"},
   PlotLabel -> plotProbsLabel,
   ImageSize -> Large
-]
+];
 Export["../figures/solutions-kolmogorov/test-mathematica/probabilities-symbolic-eval.pdf", plotProbs];
 
 
 (* extract expected values *)
 (* Note: ! indexes go from 1 ! *)
-expectedValue[t_] := Sum[k * pOftAtParamValues[[k + 1]], {k, 0, Nval}]
+expectedValue[t_] := Sum[k * pOftAtParamValues[[k + 1]], {k, 0, Nval}];
 
 (* plot expected values E[X(t)] *)
 plotExpValsLabel = 
@@ -178,7 +178,7 @@ plotExVals = Plot[expectedValue[t], {t, 0, tMax},
   PlotStyle -> {Thick, Black},
   GridLines -> Automatic,
   ImageSize -> Large
-]
+];
 Export["../figures/solutions-kolmogorov/test-mathematica/expected-values-symbolic-eval.pdf", 
   plotExVals]; 
 

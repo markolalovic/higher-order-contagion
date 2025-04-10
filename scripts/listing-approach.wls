@@ -62,7 +62,7 @@ b[k_] := beta2 Binomial[k, 2] (Nval - k);
 c[k_] := mu k;
 
 vars = Table[p[k][t], {k, 0, Nval}];
-Print["vars:\n ", vars, "\n"]
+Print["vars:\n ", vars, "\n"];
 
 (* list all N + 1 ODE equations *)
 odes = Table[
@@ -113,13 +113,13 @@ plotProbs = Plot[Evaluate[Table[p[k][t], {k, 0, Nval}] /. solutionNumerical], {t
   AxesLabel -> {"Time t", "Probability"},
   PlotLabel -> plotProbsLabel,
   ImageSize -> Large
-]
+];
 Export["../figures/solutions-kolmogorov/test-mathematica/probabilities.pdf", plotProbs];
 
 (* extract the list of rules from NDSolve output *)
 solRules = solutionNumerical[[1]];
 expectedValue[t_] := Sum[k*p[k][t], {k, 0, Nval}] /. solRules;
-Print["\nE[ X(0) ] = ", expectedValue[0] /. Rule @@@ ics, "\n"]
+Print["\nE[ X(0) ] = ", expectedValue[0] /. Rule @@@ ics, "\n"];
 
 (* plot expected values E[X(t)] *)
 plotExpValsLabel = 
@@ -130,7 +130,7 @@ plotExVals = Plot[expectedValue[t], {t, 0, tMax},
   PlotStyle -> {Thick, Black},
   GridLines -> Automatic,
   ImageSize -> Large
-]
+];
 Export["../figures/solutions-kolmogorov/test-mathematica/expected-values.pdf", plotExVals];
 
 (* :!CodeAnalysis::EndBlock:: *)

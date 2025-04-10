@@ -98,7 +98,7 @@ plotExVals = Plot[
   GridLines -> Automatic,
   ImageSize -> Large,
   PlotRange -> {0, All} (* y-axis should start at 0 *)
-  ];
+];
 
 Export[figurePath, plotExVals];
 Print["Done, saved to: ", figurePath];
