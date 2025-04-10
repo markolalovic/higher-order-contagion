@@ -7,7 +7,7 @@ ClearAll["Global`*"]
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
 figurePath = \
-  "../figures/solutions-kolmogorov/test-mathematica/stationary-state=0.pdf";
+  "../figures/solutions-kolmogorov/test-mathematica/expected-values-varying-betas.pdf";
 
 (* --- Setup --- *)
 mu = 1.0;    (* fixed recovery rate *)
@@ -18,7 +18,6 @@ I0 = 10;
 Print["N = ", Nval, ", I0 = ", I0, ", mu = ", mu];
 
 (* check for various values of (beta1, beta2) pairs *)
-
 betaPairs = {
   {0.023, 0.00042},
   {2.0 / Nval, 4.0 / Nval^2},
@@ -103,9 +102,5 @@ plotExVals = Plot[
 
 Export[figurePath, plotExVals];
 Print["Done, saved to: ", figurePath];
-
-(* Evaluate[Table[expectedValueFunctionsList[[i]][t], {i, Length[Nvalues]}]],  *)
-(* Evaluate[#[t] & /@ expectedValueFunctionsList], *)
-(* {t, 0, tMax}, *)
 
 (* :!CodeAnalysis::EndBlock:: *)  

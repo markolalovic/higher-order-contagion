@@ -87,10 +87,8 @@ Print["Initial condition: \n", ics, "\n"];
 
 (* Try to find analytic solution *)
 (* abort and quit, doesn't finish at all:
-
 solution = DSolve[Join[odes, ics], vars, t]
 Print["Found analytic solution"];
-
 *)
 
 (* Else, numerical solution only *)
