@@ -183,17 +183,13 @@ def list_all_ODEs(g, beta1, beta2, mu):
     for set_K_ in all_states:
         s1_, s2_ = total_SI_pairs_and_SII_triples(g, set_K_)
         s12_cache[set_K_] = (s1_, s2_)
-    
-    denom_debug = 1 # TODO: remove
+        
     def ode_system(t, p):
         r"""Given p = p(t) a vector of length M, it returns dp / dt where:
             p[i] = p_{K}(t) for subset K of V and `all_states[i] = K`.
         """
         dpdt = np.zeros(M, dtype=float)
         for i, set_K in enumerate(all_states):
-            size_set_K = len(set_K)
-            size_set_V_minus_set_K = len(set_V.difference(set_K))
-
             # handle set_0 boundary state
             if set_K == set_0:
                 # only recovery from singleton sets {v} are possible
@@ -201,8 +197,7 @@ def list_all_ODEs(g, beta1, beta2, mu):
                 for v in range(N):
                     set_K_plus_v = frozenset(set_K.union({v}))
                     idx_plus = state_index[set_K_plus_v]
-                    ## TODO: exploding, dividing by |set_V \ set_K| = N
-                    dpdt[i] += mu * p[idx_plus] / (denom_debug * N)
+                    dpdt[i] += mu * p[idx_plus]
 
             # handle set_V boundary state
             elif set_K == set_V:
@@ -214,11 +209,10 @@ def list_all_ODEs(g, beta1, beta2, mu):
                     s1M, s2M = s12_cache[set_K_minus_v]
                     infection_rate = beta1 * s1M + beta2 * s2M
                     ## TODO: exploding, dividing by |set_K| = N
-                    dpdt[i] += infection_rate * p[idx_minus] / (denom_debug * N)
+                    dpdt[i] += infection_rate * p[idx_minus]
                 
                 # or no event, that is none of N infected nodes recovers
                 # with np.errstate(subtract="ignore"):
-                # print(f"p[i] = {p[i]}"), TODO: debug p[i] go to +-inf
                 dpdt[i] -= (N * mu) * p[i]
             
             # handle set_K is proper subset of set_V, i.e. inner states
@@ -229,22 +223,18 @@ def list_all_ODEs(g, beta1, beta2, mu):
                     idx_minus = state_index[set_K_minus_v]
                     s1M, s2M = s12_cache[set_K_minus_v]
                     infection_rate = beta1 * s1M + beta2 * s2M
-                    ## TODO: exploding, dividing by |set_K|
-                    dpdt[i] += infection_rate * p[idx_minus] / (denom_debug * size_set_K)
+                    dpdt[i] += infection_rate * p[idx_minus]
                 
                 # II. sum: recovery from larger set K \cup {v} to smaller set K
                 for v in range(N):
                     if v not in set_K:
                         set_K_plus_v = frozenset(set_K.union({v}))
                         idx_plus = state_index[set_K_plus_v]
-                        size_K_plus_v = len(set_K_plus_v)
-                        ## TODO: exploding, dividing by |set_V \ set_K|
-                        dpdt[i] += mu * (size_K_plus_v) * p[idx_plus] / (denom_debug * size_set_V_minus_set_K)
+                        dpdt[i] += mu * p[idx_plus]
 
                 # III. last term: no event
                 s1K, s2K = s12_cache[set_K]
                 outflow_rate = beta1 * s1K + beta2 * s2K + mu * len(set_K)
-                # print(f"p[i] = {p[i]}"), TODO: debug p[i] go to +-inf
                 dpdt[i] -= outflow_rate * p[i]
         return dpdt
     return ode_system
