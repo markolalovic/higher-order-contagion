@@ -38,21 +38,7 @@ def list_all_states(g):
             for set_K in combinations(range(N), k):
                 all_states.append(frozenset(set_K))
     return all_states
-###
-## Examples
-#
-## Example complete case
-# N = 5
-# g = CompleteHypergraph(N)
-# list_all_states(g)
-#> [0, 1, 2, 3, 4, 5]
-#
-## Example general case
-# g = example45()
-# for state_K in list_all_states(g):
-#     print(list(state_K), end=", ")
-#> [], [0], [1], [2], [3], [0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3], \
-#> [0, 1, 2], [0, 1, 3], [0, 2, 3], [1, 2, 3], [0, 1, 2, 3]
+
 
 def total_SI_pairs_and_SII_triples(g, current_state):
     r"""Given a hypergraph `g` and current state, it returns:
@@ -97,35 +83,7 @@ def total_SI_pairs_and_SII_triples(g, current_state):
                 s2 += inf_ho
     # casting to integers since totals s1, s2 are counts
     return int(s1), int(s2) 
-### 
-## Tests
-#
-## Test complete case
-# N = 5
-# g = CompleteHypergraph(N)
-# all_states = list_all_states(g)
-# s12_cache = {}
-# for state_k_ in all_states:
-#     s1_, s2_ = total_SI_pairs_and_SII_triples(g, state_k_)
-#     s12_cache[state_k_] = (s1_, s2_)
-# s12_cache
-#> {0: (0, 0), 1: (4, 0), 2: (6, 3), 3: (6, 6), 4: (4, 6), 5: (0, 0)}
-###
-## Test general case
-# g = example45():
-# states_of_size_2 = list(combinations(g.nodes, 2))
-#> [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]
-#
-# for state_of_size_2 in states_of_size_2:
-#     set_K = frozenset(state_of_size_2)
-#     s1, s2 = total_SI_pairs_and_SII_triples(g, set_K)
-#     print(f"set_K {state_of_size_2}: {s1}, {s2}")
-#> set_K (0, 1): 2, 0
-#> set_K (0, 2): 3, 0
-#> set_K (0, 3): 3, 0
-#> set_K (1, 2): 3, 1
-#> set_K (1, 3): 3, 1
-#> set_K (2, 3): 2, 1
+
 
 def create_generator_matrix(g, beta1, beta2, mu):
     N = g.number_of_nodes()

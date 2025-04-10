@@ -18,17 +18,17 @@ python3 -m pip install -r requirements.txt
 
 Alternatively, you can install dependencies individually. For the main parts you only need:
 ```bash
-python -m pip install numpy scipy
+python3 -m pip install numpy scipy
 ```
 
 For plotting results and data handling:
 ```bash
-python -m pip install matplotlib pandas
+python3 -m pip install matplotlib pandas
 ```
 
 To run the Jupyter notebooks, install also:
 ```bash
-python -m pip install jupyterlab notebook ipykernel
+python3 -m pip install jupyterlab notebook ipykernel
 ```
 
 and add the virtual environment as a kernel:
@@ -36,6 +36,12 @@ and add the virtual environment as a kernel:
 ipython kernel install --user --name .venv
 ```
 
+To run the tests install:
+```bash
+python3 -m pip install pytest
+```
+
 Optionally, to run notebooks and scripts (`.wls`) written in Mathematica, you'll need the [Wolfram Engine kernel](https://www.wolfram.com/engine/index.php.en). 
 
-And, for visualizing graphs and hypergraphs, you can install [SageMath](https://www.sagemath.org/).
+For visualizing graphs and hypergraphs, you can install [SageMath](https://www.sagemath.org/).
+

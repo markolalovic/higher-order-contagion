@@ -284,6 +284,26 @@ def get_average(X_sims, time_max, nsims, delta_t=0.1, selected=2):
                 j += 1
     return avg_nums / nsims, times
 
+def export_to_csv(X_sims, file_name):
+    # TODO: move to utils.py
+    # Columns: [nsim, time, time_to_event, infected, event_type, total_pw, total_ho]
+    # file_name = "../data/sim_complete.csv"
+    data = []
+    for nsim, X_t in enumerate(X_sims, start=1):
+        times, times_to_event, infected, event_types, total_pws, total_hos = \
+            X_t[0], X_t[1], X_t[2], X_t[3], X_t[4], X_t[5]
+        nsim_column = np.full(len(times), nsim)
+        data.append(pd.DataFrame({"nsim": nsim_column, 
+                                  "time": times, 
+                                  "time_to_event": times_to_event,
+                                  "infected": infected,
+                                  "event_type": event_types,
+                                  "total_pw": total_pws,
+                                  "total_ho": total_hos,
+                                  }))
+    df = pd.concat(data, ignore_index=True)
+    df.to_csv(file_name, index=False)
+
 def run_on_random():
     file_name = "../data/sim_random.csv"
     # TODO: test and fix to scale properly
@@ -323,48 +343,21 @@ def run_on_random():
     elapsed_time = end_time - start_time
     print(f"elapsed_time: {elapsed_time:.2f} seconds for {nsims} simulations with {N} nodes.")
 
-    # export to CSV
-    #  nsim [time, time_to_event, total_infected, event_type, total_pw, total_ho]
-    data = []
-    for nsim, X_t in enumerate(X_sims, start=1):
-        times, times_to_event, infected, event_types, total_pws, total_hos = X_t[0], X_t[1], X_t[2], X_t[3], X_t[4], X_t[5]
-        nsim_column = np.full(len(times), nsim)
-        data.append(pd.DataFrame({"nsim": nsim_column, 
-                                  "time": times, 
-                                  "time_to_event": times_to_event,
-                                  "infected": infected,
-                                  "event_type": event_types,
-                                  "total_pw": total_pws,
-                                  "total_ho": total_hos,
-                                  }))
-    df = pd.concat(data, ignore_index=True)
-    df.to_csv(file_name, index=False)
-
 def run_on_complete():
-    file_name = "../data/sim_complete.csv"
-    # setup
-    # On complete:
-    # TODO: put all setups in `config.py` 
+    # TODO: could put all setups in `config.py` 
     # the reason for this is that the rates in the gillespie are different from rates in the ODE limit
     # in the ODE we have \tau = \beta_1 / N, and \delta = beta_2 / N^2,
     # e.g. if \tau = 1 and \delta = 2 in the ODE, then in gillespie we need to use \tau / N, and \delta / N^2
     # TODO: check the paper with Iacopo and ..
     # TODO: don"t need to use this
-    # beta1 =  2 / N       # pairwise infection rate
-    # beta2 =  4 / (N**2)  # hyperedge contagion rate
-    # mu    =  1                  # recovery rate    
-    ###
-    ## Example Setup
-    #
-    #   H = CompleteHypergraph, N = 100, I0 = 10
-    #   beta1 = 0.02, beta2 = 0.0004, mu = 1    
-    #
     nsims = 10
     N = 100
+    I0 = 10         # number of initial infected
+
     beta1 = 2 / N       # pairwise infection rate
     beta2 = 4 / (N**2)  # hyperedge contagion rate
     mu    = 1           # recovery rate
-    I0 = 10         # number of initial infected
+    
     time_max = 10   # maximum time duration
     initial_infections = list(range(I0)) # which nodes are infected at t=0
     g = CompleteHypergraph(N)
@@ -382,23 +375,6 @@ def run_on_complete():
     elapsed_time = end_time - start_time
     print(f"elapsed_time: {elapsed_time:.2f} seconds for {nsims} simulations with {N} nodes")
 
-    # export to CSV
-    #  nsim [time, time_to_event, infected, event_type, total_pw, total_ho]
-    data = []
-    for nsim, X_t in enumerate(X_sims, start=1):
-        times, times_to_event, infected, event_types, total_pws, total_hos = \
-            X_t[0], X_t[1], X_t[2], X_t[3], X_t[4], X_t[5]
-        nsim_column = np.full(len(times), nsim)
-        data.append(pd.DataFrame({"nsim": nsim_column, 
-                                  "time": times, 
-                                  "time_to_event": times_to_event,
-                                  "infected": infected,
-                                  "event_type": event_types,
-                                  "total_pw": total_pws,
-                                  "total_ho": total_hos,
-                                  }))
-    df = pd.concat(data, ignore_index=True)
-    df.to_csv(file_name, index=False)
 
 
 if __name__ == "__main__":
