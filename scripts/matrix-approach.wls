@@ -4,6 +4,9 @@
 
 ## Generator matrix approach
 
+      p'(t) = Q p(t)
+      subject to p(0) = p0
+
   1. define solution: 
   
     p(t) = (p_k (t))_{k} for all states k
@@ -12,9 +15,9 @@
 
     Q = {q_{ij}}, s.t. d/dt p(t) = Q p(t)
 
-  3. set initial condition p(0), e.g. if k infected at t = 0:
+  3. set initial condition p(0), e.g. if `i` infected at t = 0:
 
-    p(0) = {0, ... 0, 1 <- k'th value, 0, ..., 0, 0};
+    p(0) = {0, ... 0, 1 <- `i`th value, 0, ..., 0, 0};
    
   4. try to find analytic solution for p(t) directly as:
 

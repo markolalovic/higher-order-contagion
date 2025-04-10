@@ -4,6 +4,9 @@
 
 ## Listing ODEs approach
 
+  Solving system of ODEs: p_{0}'(t) = ..., p_{1}'(t) = ...
+  using p_{i}(0) = 1, if there are `i` initial infected.
+
   1. define the variables for all states k: 
     
     vars = {p0(t), p1(t), ..., pN(t)}
