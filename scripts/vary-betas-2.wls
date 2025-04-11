@@ -114,12 +114,7 @@ figurePath = "../figures/solutions-kolmogorov/test-mathematica/expected-values-v
 
 pltLabel = Row[{"Expected values E[X(t)] for varying betas, N=", Nval, ", I0=", I0, ", mu = ", mu}];
 
-(* Generate legends only for the pairs that succeeded *)
-legendLabels = Table[
-   Row[{"beta1 = ", NumberForm[N[betaPairs[[i, 1]]], {4, 3}],
-        ", beta2 = ", NumberForm[N[betaPairs[[i, 2]]], {4, 4}]}],
-   {i, Length[betaPairs]}
-];
+(* No legendLabels *)
 
 Print["Plotting..."];
 plotExVals = Plot[
