@@ -128,4 +128,6 @@ if __name__ == "__main__":
     plt.ylabel(r"$E[p_{k}(t)]$")
     # plt.legend()
     plt.title(f"H = Complete Hypergraph, N = {N}")
+    plt.savefig("../figures/solutions-kolmogorov/debug/bump-behavior.pdf", format='pdf', bbox_inches='tight')
+    print("figure saved")    
     plt.show()
