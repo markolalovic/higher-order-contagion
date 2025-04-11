@@ -7,7 +7,7 @@ ClearAll["Global`*"]
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
 figurePath = \
-  "../figures/solutions-kolmogorov/test-mathematica/expected-values-varying-betas.pdf";
+  "../figures/solutions-kolmogorov/test-mathematica/expected-values-varying-betas-1.pdf";
 
 (* --- Setup --- *)
 mu = 1.0;    (* fixed recovery rate *)
@@ -25,7 +25,7 @@ betaPairs = {
   {2.0 / Nval, 2.0 / Nval^2},    
   {1.5 / Nval, 3.0 / Nval^2},
   {0.01, 0.0005}  
-}
+};
 
 (* ----------------------------------------------------- *)
 (*  Construct generator matrix Q                         *)
@@ -103,4 +103,4 @@ plotExVals = Plot[
 Export[figurePath, plotExVals];
 Print["Done, saved to: ", figurePath];
 
-(* :!CodeAnalysis::EndBlock:: *)  
+(* :!CodeAnalysis::EndBlock:: *)
