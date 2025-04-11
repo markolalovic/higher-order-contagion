@@ -1,6 +1,10 @@
 # ignore data files
 data/
 
+# results files can be large too
+results/
+
+# macOS stuff
 *.DS_Store
 .DocumentRevisions-V100
 .fseventsd

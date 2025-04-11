@@ -1,13 +1,28 @@
 #!/usr/local/bin/wolframscript
 
-(* vary-betas-contour.wls *)
-(* --- Contour plot --- *)
+(* bad-betas.wls *)
 
 ClearAll["Global`*"]
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
-figurePath = "../figures/solutions-kolmogorov/test-mathematica/expected-values-varying-betas-contour.pdf";
+figurePath = "../figures/solutions-kolmogorov/test-mathematica/bad-betas.pdf";
+
+(* bad betas indices causing bumps when using `solve_ivp` *)
+badIndices = {
+    {7, 8},
+    {7, 9},
+    {8, 6},
+    {8, 7},
+    {8, 8},
+    {8, 9},
+    {9, 4},
+    {9, 5},
+    {9, 6},
+    {9, 7},
+    {9, 8},
+    {9, 9}
+};
 
 (* --- Setup --- *)
 Nval = 100; (* number of nodes *)
@@ -32,10 +47,6 @@ Print["Generated ", Length[betaPairs], " (beta1, beta2) pairs: "];
 Print["beta1 \t beta2"]
 Print[MatrixForm[Take[betaPairs, 5]]];
 
-
-(* ----------------------------------------------------- *)
-(*  Construct a list of ODEs                             *)
-(* ----------------------------------------------------- *)
 constructODEs[n_, beta1_, beta2_, mu_] := Module[{odes, vars, k},
   Clear[a, b, c, p];
   a[k_] := beta1 k (n - k);
@@ -64,9 +75,13 @@ constructODEs[n_, beta1_, beta2_, mu_] := Module[{odes, vars, k},
   {odes, vars} (* Return both odes and vars *)
 ];
 
-(* Evaluate each expected value function at tMax *)
-(* Calculate expected values at tMax for each beta1, beta2 pair *)
-expectedValuesAtTMaxList = Table[
+
+(* ----------------------------------------------------- *)
+(*  Plot expected values for each (beta1, beta2) pair    *)
+(* ----------------------------------------------------- *)
+
+(* put all expected values functions in a list *)
+expectedValueFunctionsList = Table[
    Module[{
      beta1 = N[pair[[1]]],
      beta2 = N[pair[[2]]],
@@ -74,53 +89,59 @@ expectedValuesAtTMaxList = Table[
      vars,
      p0,
      solutionFuncs,
-     expectedValueAtTMax (* Changed variable name *)
+     expectedValueFunc
      },
-    Print["Running for (beta1, beta2) = ", {beta1, beta2}];
-    
-    (* Construct ODEs and Initial Conditions *)
+    Print["Running with current pair (beta1, beta2) = ", beta1, ", ", beta2];
     {odes, vars} = constructODEs[Nval, beta1, beta2, mu];
     p0 = Table[p[k][0] == If[k == I0, 1.0, 0.0], {k, 0, Nval}];
     
     (* Solve the system numerically *)
     (* TODO: adjust MaxSteps *)
     solutionFuncs = NDSolveValue[
-                          Join[odes, p0],
-                          Table[p[k][t], {k, 0, Nval}], (* Get expressions p[k][t] *)
-                          {t, 0, tMax},
-                          MaxSteps -> 50000];
+                         Join[odes, p0],
+                         Table[p[k], {k, 0, Nval}], (* TODO: can't use vars? *)
+                         {t, 0, tMax},
+                         MaxSteps -> 50000];
+    
     
     If[ (* if NDSolve fails to find solution *)
         Head[solutionFuncs] =!= List || Length[solutionFuncs] != Nval + 1,
         Print["NDSolve failed for current beta pair"];
         Missing["NDSolveFailed"],
         (* else, return the expected value, note shift index k -> k + 1 *)
-        expectedValueAtTMax = Sum[k * (solutionFuncs[[k + 1]] /. t -> tMax), {k, 0, Nval}];
+        expectedValueFunc[t_?NumericQ] := Sum[k * solutionFuncs[[k + 1]][t], {k, 0, Nval}];
         Print["Done"];
-        expectedValueAtTMax]
-   ], {pair, betaPairs} (* for all (beta1, beta2) pairs *)
+        expectedValueFunc]
+    ], {pair, betaPairs} (* for all (beta1, beta2) pairs *)
 ];
 
-contourPlotData = MapThread[
-   { N[#1[[1]]], N[#1[[2]]], #2 } &, 
-   {betaPairs, expectedValuesAtTMaxList}
+(* Convert badIndices to actual bad {beta1, beta2} pairs *)
+badBetaPairs = {beta1Vec[[#[[1]]]], beta2Vec[[#[[2]]]]} & /@ badIndices;
+
+(* Generate list of plot styles based on bad beta pairs *)
+plotStylesList = Table[
+   If[MemberQ[badBetaPairs, betaPairs[[i]]],
+      {Thick, Red}, (* bad beta pair *)
+      {Thin, Black}
+   ], {i, 1, Length[betaPairs]}
 ];
+
+pltLabel = Row[{"Bad betas, N=", Nval, ", I0=", I0, ", mu = ", mu}];
 
 Print["Plotting ..."];
-pltLabel = Row[{"Stationary state k* = E[X(tMax)], where: tMax = ", tMax, ", N=", Nval, ", I0=", I0, ", mu = ", mu}];
-contourPlot = ListContourPlot[
-    contourPlotData,
-    ContourLabels -> True,
-    PlotLegends -> Automatic,
-    FrameLabel -> {"beta1","beta2"},
-    PlotLabel -> pltLabel,
-    ColorFunction -> "TemperatureMap",
-    ImageSize -> Large,
-    AspectRatio -> 1
+plotExVals = Plot[
+   Evaluate[#[t] & /@ expectedValueFunctionsList],
+   {t, 0, tMax},
+   AxesLabel -> {"Time t", "E[X(t)]"},
+   PlotLabel -> pltLabel,
+   PlotStyle -> plotStylesList, (* color bad beta pairs curves red *)
+   GridLines -> Automatic,
+   ImageSize -> Large,
+   PlotRange -> {0, All} (* y-axis should start at 0 *)
 ];
-(* contourPlot *)
+(* plotExVals *)
 
-Export[figurePath, contourPlot];
-Print["Plot saved to: ", figurePath];
+Export[figurePath, plotExVals];
+Print["Done, saved to: ", figurePath];
 
 (* :!CodeAnalysis::EndBlock:: *)
