@@ -30,7 +30,7 @@ def list_all_ODEs_complete(N, beta1, beta2, mu):
         s1_, s2_ = total_SI_pairs_and_SII_triples(N, state_k_)
         s12_cache[state_k_] = (s1_, s2_)
     
-    def ode_system_complete(t, p):
+    def ode_system_complete(p, t):
       r"""Given p = p(t) a vector of length M, returns dp / dt where p[i] is:
 
         * In case of complete hypergraph p[i] is simply p[k]:
@@ -64,18 +64,18 @@ def list_all_ODEs_complete(N, beta1, beta2, mu):
       return dpdt
     return ode_system_complete
 
-def calculate_expected_values(sol):
+def calculate_expected_values(sol, ntimes):
     r"""Given solution `sol` of forward Kolmogorov equations at times t_i in sol.t, returns:
        E[X(t_i)] = \sum_{k = 0}^{M - 1} k * p_{k}(t)
        where k = number of infected, that si |K| in general.
     """
     # t_vals = sol.t # vector of times of length ntimes
-    p_vals = sol.y # matrix of shape (M x ntimes)
-    M, ntimes = p_vals.shape # M = N + 1 for complete case
+    # p_vals = sol.y # matrix of shape (ntimes x M)
+    # M, ntimes = p_vals.shape # M = N + 1 for complete case
 
     expected_values = np.zeros(ntimes, dtype=float)
     for i in range(ntimes):
-        expected_values[i] = np.sum([k * p_vals[k, i] for k in range(M)])
+        expected_values[i] = np.sum([k * sol[i, k] for k in range(M)])
     return expected_values
 
 if __name__ == "__main__":
