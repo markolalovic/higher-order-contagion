@@ -1,6 +1,7 @@
 """ Isolated solving KEs for complete hypergraphs only. """
 
 import numpy as np
+import pickle
 import matplotlib.pylab as plt
 from scipy.integrate import solve_ivp
 
@@ -79,55 +80,110 @@ def calculate_expected_values(sol):
     return expected_values
 
 if __name__ == "__main__":
+    """Complete case test."""
     # setup
-    nsims = 10 # number of simulation runs
-    time_max = 10   # maximum time duration
-
     # TODO: increase these values
-    N = 4 
-    I0 = 1 
-    t_max = 10
+    N = 100
+    I0 = 10 
+    time_max = 20
 
     beta1 = 2 / N       # pairwise infection rate
     beta2 = 4 / (N**2)  # hyperedge contagion rate
     mu    = 1           # recovery rate
+
     print(f"Setup: \n")
     print(f"\tH = Complete Hypergraph, N = {N}, I0 = {I0}\n")
     print(f"\tbeta1 = {beta1}, beta2 = {beta2}, mu = {mu}\n")
 
+    # set mesh size
+    i_max = 25
+    j_max = 25
+
+    # initialize
+    k_star = np.zeros((i_max, j_max)) # to store the values k^* = E[X(t_max)]    
+    eps = 1e-1 # shift for esp to not start with 0 !
+    beta1_vec = (np.array(list(range(i_max))) + eps) / N
+    beta2_vec = (np.array(list(range(j_max))) + eps) / (N**2)
+    print(f"beta1: {beta1_vec[:5]}, ..., {beta1_vec[-3:-1]}")
+    print(f"beta2: {beta2_vec[:5]}, ..., {beta2_vec[-3:-1]}")
+
     M = N + 1 # number of all states
+
     # set the initial condition
     p0 = np.zeros(M)
     p0[I0] = 1.0 # all other states have prob 0 at time 0
-    print(f"p0 = {p0}")
+    print(f"p0 = {p0[:20]} ...")
 
     # time range and times to evaluate solution
     nsteps = 101
     t_span = (0.0, time_max)
-    t_eval = np.linspace(t_span[0], t_span[1], nsteps) 
+    t_eval = np.linspace(t_span[0], t_span[1], nsteps)
 
-    # Solve KEs
-    ode_system_complete = list_all_ODEs_complete(N, beta1, beta2, mu)
+    solve_for_betas = False
+    # save solutions to run it once
+    file_path = '../results/solutions_stationary_state_25x25.pickle'
 
-    def f_ode(t, p):
-        return ode_system_complete(t, p)
+    if solve_for_betas:
+        solutions = {}
+        for i, beta1 in enumerate(beta1_vec):
+            for j, beta2 in enumerate(beta2_vec):
+                ode_system_complete = list_all_ODEs_complete(N, beta1, beta2, mu)
 
-    sol = solve_ivp(f_ode, 
-                    t_span, 
-                    p0, 
-                    t_eval=t_eval,
-                    method="RK45"
-    )
+                def f_ode(t, p):
+                    return ode_system_complete(t, p)
 
-    # plot the expected values of p_{k}(t) over time t
-    expected_values = calculate_expected_values(sol)
+                sol = solve_ivp(f_ode, 
+                                t_span, 
+                                p0, 
+                                t_eval=t_eval,
+                                method="LSODA")
+                solutions[str((i, j))] = sol
+        # save the solutions
+        with open(file_path, "wb") as f:
+            pickle.dump(solutions, f)    
+    else:
+        # load solutions
+        with open(file_path, "rb") as f:
+            solutions = pickle.load(f)
+    
+    # plot expected values of p_{k}(t) over time t
+    k_star = np.zeros((i_max, j_max)) # to store the values k^* = E[X(t_max)]
+
     plt.figure()
-    plt.scatter(sol.t, expected_values, s = 10, color="k", 
-                label=r"Expected values $E[p_{k}(t)]$")
-    plt.xlabel("Time t")
-    plt.ylabel(r"$E[p_{k}(t)]$")
-    # plt.legend()
-    plt.title(f"H = Complete Hypergraph, N = {N}")
-    plt.savefig("../figures/solutions-kolmogorov/debug/bump-behavior.pdf", format='pdf', bbox_inches='tight')
-    print("figure saved")    
+    for i, beta1 in enumerate(beta1_vec):
+        for j, beta2 in enumerate(beta2_vec):
+            sol = solutions[str((i, j))]
+            expected_values = calculate_expected_values(sol)
+            
+            k_star[i, j] = expected_values[-1]
+
+            plt.plot(sol.t, expected_values, color="k")
+
+    plt.xlabel("Time")
+    plt.ylabel("Number of Infected")
+    plt.grid(True)
+    plt.savefig("../figures/solutions-kolmogorov/complete/stationary-state_25x25.pdf", 
+                format='pdf', bbox_inches='tight')
+    plt.show()
+
+    B1, B2 = np.meshgrid(beta1_vec, beta2_vec)
+    plt.figure()
+    levels = np.linspace(k_star.min(), k_star.max(), 15) # TODO: set levels
+
+    contourf_plot = plt.contourf(B1, B2, k_star.T, levels=levels, cmap='viridis') # use k_star.T!!
+    contour_plot = plt.contour(B1, B2, k_star.T, levels=contourf_plot.levels, colors='k', linewidths=0.5)
+
+    plt.clabel(contour_plot, inline=True, fontsize=8, fmt='%.1f')
+
+    cbar = plt.colorbar(contourf_plot)
+    cbar.set_label(r'')
+
+    plt_title = r'Stationary state $k^{*} = E[X(t_{max})]$, '
+    plt_title += f"\nwhere: time_max = {time_max}, N = {N}, I0 = {I0}, mu = {mu}"
+    plt.xlabel(r'$\beta_1$')
+    plt.ylabel(r'$\beta_2$')
+    plt.title(plt_title)
+    plt.grid(True, linestyle=':', alpha=0.5)
+    plt.savefig("../figures/solutions-kolmogorov/complete/stationary-state-contour_25x25.pdf", 
+                format='pdf', bbox_inches='tight')
     plt.show()
