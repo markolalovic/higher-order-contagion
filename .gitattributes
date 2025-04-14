@@ -1,3 +1,4 @@
 *.ipynb -linguist-detectable
 *.nb -linguist-detectable
 *.wls linguist-language=Mathematica
+*.m linguist-language=Matlab
