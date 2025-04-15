@@ -61,14 +61,10 @@ output_dir = '../figures/solutions-kolmogorov/debug';
 if ~exist(output_dir, 'dir')
    mkdir(output_dir);
 end
-filename = fullfile(output_dir, 'bump-behavior_matlab.pdf');
-try
-    saveas(gcf, filename);
-    fprintf('Figure saved to %s\n', filename);
-catch ME
-    fprintf('Error saving figure: %s\n', ME.message);
-    fprintf('Please ensure the directory "%s" exists and is writable.\n', output_dir);
-end
+filename = fullfile(output_dir, 'expected-values_matlab_N=4.pdf');
+saveas(gcf, filename);
+fprintf('Figure saved to %s\n', filename);
+
 
 function [s1, s2] = total_SI_pairs_and_SII_triples(N, k)
     s1 = k * (N - k);

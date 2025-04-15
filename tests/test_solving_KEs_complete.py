@@ -84,7 +84,7 @@ if __name__ == "__main__":
     # setup
     # TODO: increase these values
     N = 100
-    I0 = 10 
+    I0 = 1
     time_max = 20
 
     beta1 = 2 / N       # pairwise infection rate
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     t_span = (0.0, time_max)
     t_eval = np.linspace(t_span[0], t_span[1], nsteps)
 
-    solve_for_betas = False
+    solve_for_betas = True
     # save solutions to run it once
     file_path = '../results/solutions_stationary_state_25x25.pickle'
 
