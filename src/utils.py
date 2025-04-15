@@ -1,45 +1,43 @@
 from sage.graphs.graph import Graph
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-
 import pickle
 
 def plot_hypergraph(g, file_name=None, y_shift = -0.008):
-    """
-    Plots a hypergraph:        
-        * Draws 1-simplices (edges)
-        * Fills 2-simplices (triangle cells) as shaded gray
-        * Labels the nodes
+    r""" Plots hypergraph g:        
+      * Draws 2-node edges
+      * Fills 3-node edges (triangle cells) as shaded gray
+      * Labels the nodes
     
-    TODOs: 
-        * Denote infected nodes (as filled dots?) and add labels (rates as numbers?)
-        * Using: g.get_node_attributes(attr) for attr = "state" or "rate"
+    TODO: 
+      * Denote infected nodes (as filled dots?) and add labels (rates as numbers?)
+      * Using: g.get_node_attributes(attr) for attr = "state" or "rate"
     """
     sage_g = Graph()
 
-    sage_g.add_vertices(range(g.N)) # add nodes first, since can be isolated
-    sage_g.add_edges(g.get_simplices(order=1)) # pairwise edges
+    sage_g.add_vertices(range(g.N)) # add nodes first, since they can be isolated
+    sage_g.add_edges(g.get_edges(order=1)) # add pairwise edges
 
     # node positions using circular layout
     sage_g.graphplot(save_pos=True, layout='circular')
-    pos = sage_g.get_pos()  # node positions
+    pos = sage_g.get_pos() # node positions dict from the chosen layout
 
     # create a figure
     # fig = plt.figure()
     fig, ax = plt.subplots(figsize=(6, 6), frameon=False)
 
-    # draw 2-simplices (filled in triangle cells) first
-    for simplex in g.get_simplices(order=2):
+    # draw 3-node edges (filled in triangle cells) first
+    for edge in g.get_edges(order=2):
         # get coordinates of triangle vertices
-        x, y = zip(*[pos[v] for v in simplex])
+        x, y = zip(*[pos[v] for v in edge])
         
         # draw triangles as gray cells
         polygon = patches.Polygon(list(zip(x, y)), closed=True, color='gray', 
                                     alpha=0.5, edgecolor=None)
         ax.add_patch(polygon)
 
-    # draw 1-simplices (edges) second
-    for edge in g.get_simplices(order=1):
+    # draw 2-node edges on top
+    for edge in g.get_edges(order=1):
         # get coordinates of edge vertices
         x, y = zip(*[pos[v] for v in edge])
         
@@ -66,8 +64,6 @@ def plot_hypergraph(g, file_name=None, y_shift = -0.008):
         spine.set_visible(False)
 
     if file_name:
-        # plt.savefig(file_name, format="svg", bbox_inches='tight', 
-        #             pad_inches=0, transparent=True, edgecolor='white')
         plt.savefig(file_name, format="svg", bbox_inches='tight', 
                     pad_inches=0, transparent=False, facecolor='white')
         print(f"Saved as {file_name}")
@@ -90,4 +86,4 @@ def load_hypergraph(file_path):
     """
     with open(file_path, "rb") as f:
         g = pickle.load(f)
-    return g         
+    return g

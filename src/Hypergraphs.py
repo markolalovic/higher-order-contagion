@@ -46,7 +46,7 @@ class EmptyHypergraph:
           * g.neighbors(i, 1) is the list of all edge neighbors of i
           * g.neighbors(i, 2) is the list of all hyperedge neighbors of i
             
-         Must run g.set_edges(edges) first!
+        Must run g.set_edges(edges) first!
         """
         return list(self.neighbors_memo[order].get(i, [])) # converts to a list
 
@@ -56,26 +56,27 @@ class EmptyHypergraph:
     def get_node_attributes(self, attr):
         return {i: self.nodes[i][attr] for i in range(self.N)}
     
-    def get_simplices(self, order=1):
-        """ Return order-simplices in self. """
+    def get_edges(self, order=1):
+        r"""Returns (order + 1)-node edges in self,
+            e.g., order=1 edges are 2-node edges are pairwise edges. """
         return [edge for edge in self.edges if len(edge) == (order + 1)]
 
     def print(self):
         print(f"\t{self.name} on {self.N} nodes with {len(self.edges)} edges.\n")
 
     def summary(self):
-        print(f"\tGraph name: {self.name}")
-        print(f"\tNumber of nodes N = {self.N}")
+        print(f"\t Graph name: {self.name}")
+        print(f"\t Number of nodes N = {self.N}")
         
-        print("\tnodes: ")
+        print("\t nodes: ")
         for node in self.nodes.keys():
             print(f"\t\t{node}: {self.nodes[node]}")
-
-        print("\tedges: ")
+        
+        print("\t edges: ")
         for edge in self.edges:
             if len(edge) == 2:
                 print(f"\t\t{edge}")
-        print("\thyperedges: ")
+        print("\t hyperedges: ")
         for edge in self.edges:
             if len(edge) == 3:
                 print(f"\t\t{edge}")
@@ -85,6 +86,7 @@ class CompleteHypergraph(EmptyHypergraph):
     r"""
     Complete hypergraph on `N` nodes, in which each edge and hyperedge is present. 
     """
+    # TODO: simplify, no need to list the edges, and precompute the neighbors
     def __init__(self, N):
         super().__init__(N) # initializes N, nodes and empty set of edges
         self.name = "Complete hypergraph"
@@ -154,7 +156,7 @@ Old plot:
         sage_g = Graph()
         
         # only draws pair-wise edges for now
-        sage_g.add_edges(self.get_simplices(order = 1))
+        sage_g.add_edges(self.get_edges(order = 1))
 
         # no position specified for plot
         p = sage_g.graphplot()

@@ -39,7 +39,6 @@ def list_all_states(g):
                 all_states.append(frozenset(set_K))
     return all_states
 
-
 def total_SI_pairs_and_SII_triples(g, current_state):
     r"""Given a hypergraph `g` and current state, it returns:
         s1 = total SI pairs
@@ -82,8 +81,7 @@ def total_SI_pairs_and_SII_triples(g, current_state):
                 s1 += inf_pw
                 s2 += inf_ho
     # casting to integers since totals s1, s2 are counts
-    return int(s1), int(s2) 
-
+    return int(s1), int(s2)
 
 def create_generator_matrix(g, beta1, beta2, mu):
     N = g.number_of_nodes()
@@ -163,8 +161,8 @@ def list_all_ODEs(g, beta1, beta2, mu):
         This is the ODE system, a function that given p_{K}(t) as a vector of length M = 2^N,
         returns dp / dt according to derived fwd KEs.
 
-        Indexing is as follows: If `all_states[i] = K` then p[i] = p_{K}(t), that is the probability
-        of being in state (subset) K at time t.
+        Indexing is as follows: If `all_states[i] = K` then p[i] = p_{K}(t), 
+        that is the probability of being in state (subset) K at time t.
     """
     N = g.number_of_nodes()
     all_states = list_all_states(g)
@@ -270,7 +268,7 @@ def list_all_ODEs_complete(g, beta1, beta2, mu):
               # infections from state N - 1, infecting the remaining v
               s1M, s2M = s12_cache[N - 1]
               infection_rate = beta1 * s1M + beta2 * s2M
-              dpdt[N] += infection_rate * p[N]
+              dpdt[N] += infection_rate * p[N - 1] # NOTE: bug fixed N - 1 instead of N!
 
               # or no event, that is none of N infected nodes recovers
               dpdt[N] -= (N * mu) * p[N]
@@ -371,8 +369,7 @@ def test_on_complete():
                     t_span, 
                     p0, 
                     t_eval=t_eval,
-                    method="RK45"
-    )
+                    method="LSODA")
 
     # plot the results: probability of each state over time
     plt.figure()
