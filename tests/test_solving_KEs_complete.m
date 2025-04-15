@@ -57,7 +57,7 @@ title(sprintf('H = Complete Hypergraph, N = %d', N));
 grid on;
 
 % --- save the figure ---
-output_dir = '../figures/solutions-kolmogorov/debug';
+output_dir = '../figures/solutions-kolmogorov/test-matlab';
 if ~exist(output_dir, 'dir')
    mkdir(output_dir);
 end

@@ -1,5 +1,8 @@
-#!/usr/bin/env sage -python
-# -*- coding: utf-8 -*-
+""" Hypergraph classes:
+  * Empty -> General
+  * Complete
+  * (Binomial) Random
+"""
 
 from itertools import combinations
 import random
@@ -126,52 +129,3 @@ class RandomHypergraph(EmptyHypergraph):
         
         return edges
 
-def example_hypergraph():
-    r"""Example of a hypergraph:
-      * edges forming a cycle on 5 nodes
-      * hyperedges forming 2 overlaping triangles on 4 nodes
-    """
-    N = 5
-    g = EmptyHypergraph(N)
-    g.name = "Example Hypergraph"
-    edges = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 0), 
-               (0, 1, 2), (1, 2, 3)]
-    g.set_edges(edges)
-    g.nodes[0]['state'] = 1
-    return g
-
-def example45():
-    r"""Example of a hypergraph (Subsection 4.5) on 4 nodes with 5 edges."""
-    N = 4
-    g = EmptyHypergraph(N)
-    g.name = "Example Hypergraph 4.5"
-    edges = [(0, 1), (1, 2), (2, 3), (3, 1), (1, 2, 3)]
-    g.set_edges(edges)
-    return g
-
-"""
-Old plot:
-
-    def plot(self, file_name=''):
-        sage_g = Graph()
-        
-        # only draws pair-wise edges for now
-        sage_g.add_edges(self.get_edges(order = 1))
-
-        # no position specified for plot
-        p = sage_g.graphplot()
-
-        if file_name:
-            p.plot().save(file_name)
-        else:
-            file_name = "../figures/test.png"
-            p.plot().save(file_name)
-            p.plot().show() # interactive only 
-            # gives: `Graphics object consisting of 11 graphics primitives`
-            # TODO: how to force display?
-            img = mpimg.imread(file_name)
-            plt.figure(figsize=(6,6))
-            plt.imshow(img)
-            plt.axis('off')
-            plt.show()
-"""
