@@ -55,10 +55,10 @@ def cycle_hypergraph(N = 10):
 
 
 if __name__ == "__main__":
-    # example_hypergraph()
+    example_hypergraph()
     
     # cycle_hypergraph()
 
-    # complete hypergraph
-    file_name = "../figures/hypergraphs/complete_hypergraph.svg"
-    draw_hypergraph(CompleteHypergraph(5), fname=file_name)
+    # # complete hypergraph
+    # file_name = "../figures/hypergraphs/complete_hypergraph.svg"
+    # draw_hypergraph(CompleteHypergraph(5), fname=file_name)
