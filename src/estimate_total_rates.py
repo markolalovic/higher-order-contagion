@@ -52,8 +52,8 @@ def list_all_ODEs_using_estimates(g, ak_hats, bk_hats, mu):
       return dpdt
     return ode_system_complete
 
-def calculate_estimates(X_sims, N, time_max, min_Tk_threshold=1e-6):
-    r''' Calculates estimates of a_k, b_k, c_k based on:
+def calculate_estimates(X_sims, N, min_Tk_threshold=1e-6):
+    r""" Calculates estimates of a_k, b_k, c_k based on:
 
         * MLE estimators: these have a hat
 
@@ -64,30 +64,32 @@ def calculate_estimates(X_sims, N, time_max, min_Tk_threshold=1e-6):
     TODO:
         * c_k hat is used for diagnostics only, could be used to see if it has effect!
         * since a_k, b_k hats could be underestimated, but c_k not since we use actual c_k
-    '''
+    """
     # initialize the aggregated stats
     T_k = np.zeros(N + 1, dtype=float)
     U_k = np.zeros(N + 1, dtype=float) # pw births from state k
     V_k = np.zeros(N + 1, dtype=float) # ho births from state k
     D_k = np.zeros(N + 1, dtype=float) # rc from state k
 
-    a_k_hat = np.zeros(N + 1, dtype=float)
-    b_k_hat = np.zeros(N + 1, dtype=float)
-    c_k_hat = np.zeros(N + 1, dtype=float)
-
     total_events_processed = 0
-    for X_t in X_sims:
-        times = X_t[0]
-        durations = X_t[1]
-        infected_counts = X_t[2]
-        event_types = X_t[3]
+    for sim_idx, X_t in enumerate(X_sims):
+        # Ensure simulation has at least an initial state and one event/end time
+        if X_t.shape[1] < 2:
+            print(f"Simulation {sim_idx} has less than 2 steps skip.")
+            continue
 
-        for i in range(len(times)):
-            time = times[i]
-            if 0 <= time <= time_max:
-                k = int(infected_counts[i])
-                duration = durations[i]
-                event_type = event_types[i]
+        times = X_t[0, :]
+        infected_counts = X_t[2, :].astype(int)
+        event_types = X_t[3, :]
+        durations = np.diff(times)
+        states_during_interval = infected_counts[:-1].astype(int)
+        events_ending_interval = event_types[1:]
+
+        for i in range(len(durations)):
+            duration = durations[i]
+            if (duration != None):
+                k = states_during_interval[i]
+                event_type = events_ending_interval[i]
 
                 T_k[k] += duration
                 # checking event_types, so no need to drop events (last two events)
@@ -102,6 +104,10 @@ def calculate_estimates(X_sims, N, time_max, min_Tk_threshold=1e-6):
     print(f"total_events_processed: {total_events_processed}")
     
     # calculate MLEs only for states with sufficient observation time!
+    a_k_hat = np.zeros(N + 1, dtype=float)
+    b_k_hat = np.zeros(N + 1, dtype=float)
+    c_k_hat = np.zeros(N + 1, dtype=float)
+
     for k in range(N + 1):
         if T_k[k] >= min_Tk_threshold: # using threshold
             a_k_hat[k] = U_k[k] / T_k[k]
@@ -112,10 +118,8 @@ def calculate_estimates(X_sims, N, time_max, min_Tk_threshold=1e-6):
     return {
         "a_k_hat": a_k_hat,
         "b_k_hat": b_k_hat,
-        "c_k_hat": c_k_hat, # c_k_hat for diagnostics
-        # "a_k_tilde": a_k_tilde, # TODO: later
-        # "b_k_tilde": b_k_tilde, # TODO: later
-        "T_k": T_k, # T_k for diagnostics
+        "c_k_hat": c_k_hat,
+        "T_k": T_k,
         "U_k": U_k,
         "V_k": V_k,
         "D_k": D_k,
