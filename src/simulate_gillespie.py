@@ -40,8 +40,8 @@ def gillespie_sim(g, beta1, beta2, mu, initial_infections, time_max):
         # if total_rate is 0, no more events are possible, end simulation
         if np.isclose(total_rate, 0.):
             print(f"break: total_rate is close to 0")
-            # NOTE: do not append on exit
-            # X_t.append([time_max, None, total_infected, None, None, None])
+            # append output to X_t
+            X_t.append([time_max, None, total_infected, None, None, None])
             break
 
         # draw next event
@@ -64,8 +64,8 @@ def gillespie_sim(g, beta1, beta2, mu, initial_infections, time_max):
         # append output to X_t
         X_t.append([time, time_to_event, total_infected, event_type, total_pw, total_ho])
     
+    # on exit append to X_t
     print(f"exited while loop: time={time}, time_to_event={time_to_event}")
-    # NOTE: append on exit only
     X_t.append([time_max, time_to_event, total_infected, None, None, None])
 
     return np.array(X_t).transpose()
@@ -267,7 +267,7 @@ def get_average(X_sims, time_max, nsims, delta_t=0.1, selected=2):
     r"""
     Returns average numbers of infected over time.
     """
-    # selected is 2, number of infected 
+    # selected is always 2, number of infected 
     times = np.arange(0, time_max + delta_t, delta_t)
     avg_nums = np.zeros(len(times))
     for X_t in X_sims:

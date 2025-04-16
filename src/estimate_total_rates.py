@@ -52,7 +52,7 @@ def list_all_ODEs_using_estimates(g, ak_hats, bk_hats, mu):
       return dpdt
     return ode_system_complete
 
-def calculate_estimates(X_sims, N, min_Tk_threshold=1e-6):
+def calculate_estimates(X_sims, N, min_Tk_threshold=1e-9): # Removed time_max, increased default threshold slightly
     r""" Calculates estimates of a_k, b_k, c_k based on:
 
         * MLE estimators: these have a hat
@@ -66,55 +66,62 @@ def calculate_estimates(X_sims, N, min_Tk_threshold=1e-6):
         * since a_k, b_k hats could be underestimated, but c_k not since we use actual c_k
     """
     # initialize the aggregated stats
-    T_k = np.zeros(N + 1, dtype=float)
-    U_k = np.zeros(N + 1, dtype=float) # pw births from state k
-    V_k = np.zeros(N + 1, dtype=float) # ho births from state k
-    D_k = np.zeros(N + 1, dtype=float) # rc from state k
+    T_k = np.zeros(N + 1, dtype=np.float64) # time spent in states k
+    U_k = np.zeros(N + 1, dtype=np.float64) # pw births from state k
+    V_k = np.zeros(N + 1, dtype=np.float64) # ho births from state k
+    D_k = np.zeros(N + 1, dtype=np.float64) # rc from state k
 
     total_events_processed = 0
     for sim_idx, X_t in enumerate(X_sims):
-        # Ensure simulation has at least an initial state and one event/end time
-        if X_t.shape[1] < 2:
-            print(f"Simulation {sim_idx} has less than 2 steps skip.")
+        # simulation needs to have more than 2 events: inital event and exit event
+        if X_t.shape[1] < 3:
+            print(f"Skipping: {sim_idx} has less than 3 events")
             continue
 
         times = X_t[0, :]
+        # states should be integers and will be used as indices
         infected_counts = X_t[2, :].astype(int)
         event_types = X_t[3, :]
+
+        # durations = X_t[1, :] # TODO: should be the same as diff(times)
         durations = np.diff(times)
-        states_during_interval = infected_counts[:-1].astype(int)
+        states_during_interval = infected_counts[:-1]
         events_ending_interval = event_types[1:]
 
         for i in range(len(durations)):
+            k = states_during_interval[i]
             duration = durations[i]
-            if (duration != None):
-                k = states_during_interval[i]
-                event_type = events_ending_interval[i]
+            event_type = events_ending_interval[i]
+            
+            # Skipping the exit events, could also check Event type
+            if duration < 0:
+                # NOTE: on event_type None (on exit), no counts are incremented, which is correct
+                print(f"Skipping: duration = {duration}, event_index = {event_type}, index = {i}, sim = {sim_idx}")
+                continue
 
-                T_k[k] += duration
-                # checking event_types, so no need to drop events (last two events)
-                if event_type == 'PW':    
-                    U_k[k] += 1
-                elif event_type == 'HO':
-                    V_k[k] += 1
-                elif event_type == 'RC':
-                    D_k[k] += 1
-                
-                total_events_processed += 1
-    print(f"total_events_processed: {total_events_processed}")
+            T_k[k] += duration
+            total_events_processed += 1
+            if event_type == 'PW':
+                U_k[k] += 1
+            elif event_type == 'HO':
+                V_k[k] += 1
+            elif event_type == 'RC':
+                D_k[k] += 1
+
+    print(f"Total events processed: {total_events_processed}")
     
-    # calculate MLEs only for states with sufficient observation time!
+    # --- Calculate MLEs ---
     a_k_hat = np.zeros(N + 1, dtype=float)
     b_k_hat = np.zeros(N + 1, dtype=float)
     c_k_hat = np.zeros(N + 1, dtype=float)
 
     for k in range(N + 1):
-        if T_k[k] >= min_Tk_threshold: # using threshold
+        if T_k[k] >= min_Tk_threshold:
             a_k_hat[k] = U_k[k] / T_k[k]
             b_k_hat[k] = V_k[k] / T_k[k]
             c_k_hat[k] = D_k[k] / T_k[k]
-        # else: estimates remain 0
-    
+        # else: estimates remain 0, indicating insufficient data or state not visited
+
     return {
         "a_k_hat": a_k_hat,
         "b_k_hat": b_k_hat,
