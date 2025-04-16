@@ -44,7 +44,9 @@ g.set_edges(edges)
 file_name = "../figures/hypergraphs/cycle_hypergraph.svg"
 draw_hypergraph(g, fname=file_name)
 ```
-![Cycle Hypergraph](figures/hypergraphs/cycle_hypergraph.svg)
+<!-- ![Cycle Hypergraph](figures/hypergraphs/cycle_hypergraph.svg)
+ -->
+<img src="figures/hypergraphs/cycle_hypergraph.svg" alt="Cycle Hypergraph" width="450" height="450">
 
 
 ## Installation
