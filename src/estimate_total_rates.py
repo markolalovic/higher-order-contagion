@@ -52,89 +52,71 @@ def list_all_ODEs_using_estimates(g, ak_hats, bk_hats, mu):
       return dpdt
     return ode_system_complete
 
-def calculate_estimates(X_sims, N):
+def calculate_estimates(X_sims, N, min_Tk_threshold=1e-6):
     r''' Calculates and returns estimates of a_k, b_k, c_k based on:
         * MLE estimators: \widehat{a}_{k}, \widehat{b}_{k}, \widehat{c}_{k}
         * Empirical estimators: \widetilde{a}_{k}, \widetilde{b}_{k}
     '''
     # initialize the aggregated stats
-    T_k = np.zeros(N + 1)
-    U_k = np.zeros(N + 1)
-    V_k = np.zeros(N + 1)
-    D_k = np.zeros(N + 1)
-    SI_k = np.zeros(N + 1)
-    SII_k = np.zeros(N + 1)
+    T_k = np.zeros(N + 1, dtype=float)
+    U_k = np.zeros(N + 1, dtype=float) # pw births from state k
+    V_k = np.zeros(N + 1, dtype=float) # ho births from state k
+    D_k = np.zeros(N + 1, dtype=float) # rc from state k
 
-    for X_t in X_sims:
-        df_sim = pd.DataFrame({
-            'time': X_t[0],
-            'time_to_event': X_t[1],
-            'infected': X_t[2],
-            'event_type': X_t[3],
-            'total_pw': X_t[4],
-            'total_ho': X_t[5],
-        })
+    a_k_hat = np.zeros(N + 1, dtype=float)
+    b_k_hat = np.zeros(N + 1, dtype=float)
+    c_k_hat = np.zeros(N + 1, dtype=float)
 
+    total_events_processed = 0
+    for sim_idx, X_t in enumerate(X_sims):
         # drop last two events
-        df_sim = df_sim.iloc[:-2]
+        # df_sim = df_sim.iloc[:-2]
 
-        # shift infected, and drop the last event
-        infected_before = df_sim['infected'].to_numpy(dtype=int)[:-1]
-        total_pw_before = df_sim['total_pw'].to_numpy(dtype=int)[:-1]
-        total_ho_before = df_sim['total_ho'].to_numpy(dtype=int)[:-1]
-        waiting_time = df_sim['time_to_event'].to_numpy()[1:]
-        event_type = df_sim['event_type'].to_numpy()[1:]
+        times = X_t[0]
+        infected_counts = X_t[2]
+        event_types = X_t[3]
 
-        for i in range(len(infected_before)):
-            k = infected_before[i]
+        # times spent before event i 
+        durations = np.diff(times) # = times[i + 1] - times[i]
+        states_before_event = infected_counts[:-1]
+        actual_event_types = event_types[1:]
 
-            T_k[k] += waiting_time[i]
+        for i in range(len(durations)):
+            k = int(states_before_event[i])
+            if 0 <= k <= N:
+                duration = durations[i]
+                event_type = actual_event_types[i]
 
-            if event_type[i] == 'PW':
-                U_k[k] += 1
-            elif event_type[i] == 'HO':
-                V_k[k] += 1
-            elif event_type[i] == 'RC':
-                D_k[k] += 1
-            
-            # TODO: is this okay:
-            SI_k[k] = total_pw_before[i]
-            SII_k[k] = total_ho_before[i]
+                T_k[k] += duration
 
-    # TODO: is this okay:
-    SI_k_T = SI_k * T_k
-    SII_k_T = SII_k * T_k
-
-    # MLEs:
-    a_k_hat = []
-    b_k_hat = []
-    c_k_hat = []
+                if event_type == 'PW':
+                    U_k[k] += 1
+                elif event_type == 'HO':
+                    V_k[k] += 1
+                elif event_type == 'RC':
+                    D_k[k] += 1
+                
+                total_events_processed += 1
     
-    # empirical tildes:
-    a_k_tilde = []
-    b_k_tilde = []
-        
-    # save also non-zero k values:
-    k_values_hat = [] 
-    
+    # calculate MLEs only for states with sufficient observation time!
     for k in range(N + 1):
-        if T_k[k] > 0:
-            a_k_hat.append(U_k[k] / T_k[k])
-            b_k_hat.append(V_k[k] / T_k[k])
-            c_k_hat.append(D_k[k] / T_k[k])
+        if T_k[k] >= min_Tk_threshold: # using threshold
+            a_k_hat[k] = U_k[k] / T_k[k]
+            b_k_hat[k] = V_k[k] / T_k[k]
+            c_k_hat[k] = D_k[k] / T_k[k]
+        # else: estimates remain 0
 
-            a_k_tilde.append(SI_k_T[k] / T_k[k])
-            b_k_tilde.append(SII_k_T[k] / T_k[k])
-
-            k_values_hat.append(k)
-
+    # Return full N+1 length arrays
     return {
-        "a_k_hat": np.array(a_k_hat),
-        "b_k_hat": np.array(b_k_hat),
-        "c_k_hat": np.array(c_k_hat),
-        "a_k_tilde": np.array(a_k_tilde),
-        "b_k_tilde": np.array(b_k_tilde),
-        "k_values_hat": np.array(k_values_hat)
+        "a_k_hat": a_k_hat,
+        "b_k_hat": b_k_hat,
+        "c_k_hat": c_k_hat,
+        # "a_k_tilde": a_k_tilde, # Excluded for now
+        # "b_k_tilde": b_k_tilde, # Excluded for now
+        "T_k": T_k, # Also return T_k for diagnostics
+        "U_k": U_k,
+        "V_k": V_k,
+        "D_k": D_k,
     }
 
 if __name__ == "__main__":
@@ -243,6 +225,12 @@ if __name__ == "__main__":
 
     ## --- Calculate the estimates ---
     estimates = calculate_estimates(X_sims, N)
+    a_k_hat = estimates["a_k_hat"]
+    b_k_hat = estimates["b_k_hat"]
+    c_k_hat = estimates["c_k_hat"]
+
+    # plot only where T_k was non-zero!
+    valid_k_idx = estimates["T_k"] > 1e-6    
 
     # and compare them to theoretical rates
     k_values = np.arange(0, N + 1) # number of infected from 0 to N
@@ -256,7 +244,7 @@ if __name__ == "__main__":
 
     # theoretical ak vs. ak hats 
     ax.plot(k_values, a_k, label=r'$a_k$', color="red")
-    ax.scatter(estimates["k_values_hat"], estimates["a_k_hat"],
+    ax.scatter(k_values[valid_k_idx], a_k_hat[valid_k_idx],
             label=r'$\widehat{a}_k$', color="black", alpha=0.9)
     plt.xlabel("Number of Infected")
     plt.ylabel("Rates and Counts")
@@ -270,7 +258,7 @@ if __name__ == "__main__":
     fig = plt.figure()
     ax = plt.subplot()
     ax.plot(k_values, b_k, label=r'$b_k$', color="blue")
-    ax.scatter(estimates["k_values_hat"], estimates["b_k_hat"],
+    ax.scatter(k_values[valid_k_idx], b_k_hat[valid_k_idx],
             label=r'$\widehat{b}_k$', color="black", alpha=0.9)
     plt.xlabel("Number of Infected")
     plt.ylabel("Rates and Estimates")
@@ -284,7 +272,7 @@ if __name__ == "__main__":
     fig = plt.figure()
     ax = plt.subplot()
     ax.plot(k_values, c_k, label=r'$c_k$', color="green")
-    ax.scatter(estimates["k_values_hat"], estimates["c_k_hat"],
+    ax.scatter(k_values[valid_k_idx], c_k_hat[valid_k_idx],
             label=r'$\widehat{c}_k$', color="black", alpha=0.9)
     plt.xlabel("Number of Infected")
     plt.ylabel("Rates and Estimates")
@@ -296,22 +284,22 @@ if __name__ == "__main__":
 
 
     ## --- Solve KEs using the estimates and compare ---
-    ode_system_complete = list_all_ODEs_using_estimates(
-        g, estimates["a_k_hat"], estimates["b_k_hat"], mu)
+    # --- Model 2 ---
+    ode_system_complete = list_all_ODEs_using_estimates(g, a_k_hat, b_k_hat, mu)
 
     def f_ode(t, p):
         return ode_system_complete(t, p)
 
-    sol = solve_ivp(f_ode, 
-                    t_span, 
-                    p0, 
-                    t_eval=t_eval,
-                    method="LSODA")
+    sol_hat = solve_ivp(f_ode, 
+                        t_span, 
+                        p0, 
+                        t_eval=t_eval,
+                        method="LSODA")
 
-    expected_values_2 = calculate_expected_values(sol)
+    expected_values_hat = calculate_expected_values(sol_hat)
     plt.figure()
     plt.plot(sol.t, expected_values, color="k", label="Model 1: Solution of KEs with beta1, beta2")
-    plt.plot(sol.t, expected_values_2, color="b", label="Model 2: Solution of KEs with ak_hats, bk_hats")
+    plt.plot(sol.t, expected_values_hat, color="b", label="Model 2: Solution of KEs with ak_hats, bk_hats")
     plt.plot(times, avg_curve, 'red', label="Gillespie average curve", alpha=0.5)
     plt.xlabel("Time")
     plt.ylabel("Number of Infected")
