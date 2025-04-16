@@ -52,7 +52,7 @@ def list_all_ODEs_using_estimates(g, ak_hats, bk_hats, mu):
       return dpdt
     return ode_system_complete
 
-def calculate_estimates(X_sims, N, min_Tk_threshold=1e-6):
+def calculate_estimates(X_sims, N, time_max, min_Tk_threshold=1e-6):
     r''' Calculates estimates of a_k, b_k, c_k based on:
 
         * MLE estimators: these have a hat
@@ -61,7 +61,7 @@ def calculate_estimates(X_sims, N, min_Tk_threshold=1e-6):
     
     # Returns full M = N + 1 length arrays a_k_hat, b_k_hat, ...
 
-    TODO: 
+    TODO:
         * c_k hat is used for diagnostics only, could be used to see if it has effect!
         * since a_k, b_k hats could be underestimated, but c_k not since we use actual c_k
     '''
@@ -76,25 +76,22 @@ def calculate_estimates(X_sims, N, min_Tk_threshold=1e-6):
     c_k_hat = np.zeros(N + 1, dtype=float)
 
     total_events_processed = 0
-    for sim_idx, X_t in enumerate(X_sims):
+    for X_t in X_sims:
         times = X_t[0]
+        durations = X_t[1]
         infected_counts = X_t[2]
         event_types = X_t[3]
 
-        # times spent before event i 
-        durations = np.diff(times) # = times[i + 1] - times[i]
-        states_before_event = infected_counts[:-1]
-        actual_event_types = event_types[1:]
-
-        for i in range(len(durations)):
-            k = int(states_before_event[i])
-            if 0 <= k <= N:
+        for i in range(len(times)):
+            time = times[i]
+            if 0 <= time <= time_max:
+                k = int(infected_counts[i])
                 duration = durations[i]
-                event_type = actual_event_types[i]
+                event_type = event_types[i]
 
                 T_k[k] += duration
                 # checking event_types, so no need to drop events (last two events)
-                if event_type == 'PW':
+                if event_type == 'PW':    
                     U_k[k] += 1
                 elif event_type == 'HO':
                     V_k[k] += 1

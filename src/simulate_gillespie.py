@@ -40,8 +40,8 @@ def gillespie_sim(g, beta1, beta2, mu, initial_infections, time_max):
         # if total_rate is 0, no more events are possible, end simulation
         if np.isclose(total_rate, 0.):
             print(f"break: total_rate is close to 0")
-            # append output to X_t
-            X_t.append([time_max, None, total_infected, None, None, None])
+            # NOTE: do not append on exit
+            # X_t.append([time_max, None, total_infected, None, None, None])
             break
 
         # draw next event
@@ -64,9 +64,9 @@ def gillespie_sim(g, beta1, beta2, mu, initial_infections, time_max):
         # append output to X_t
         X_t.append([time, time_to_event, total_infected, event_type, total_pw, total_ho])
     
-    # on exit append to X_t
     print(f"exited while loop: time={time}, time_to_event={time_to_event}")
-    X_t.append([time_max, time_to_event, total_infected, None, None, None])
+    # NOTE: do not append on exit
+    # X_t.append([time_max, time_to_event, total_infected, None, None, None])
 
     return np.array(X_t).transpose()
 
@@ -286,7 +286,10 @@ def get_average(X_sims, time_max, nsims, delta_t=0.1, selected=2):
 
 def export_to_csv(X_sims, file_name):
     # TODO: move to utils.py
-    # Columns: [nsim, time, time_to_event, infected, event_type, total_pw, total_ho]
+    # Single X_t:
+    # [time, time_to_event, infected, event_type, total_pw, total_ho]
+    # Columns: 
+    # [nsim, time, time_to_event, infected, event_type, total_pw, total_ho]
     # file_name = "../data/sim_complete.csv"
     data = []
     for nsim, X_t in enumerate(X_sims, start=1):
