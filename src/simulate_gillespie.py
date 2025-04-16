@@ -272,7 +272,7 @@ def get_average(X_sims, time_max, nsims, delta_t=0.1, selected=2):
     avg_nums = np.zeros(len(times))
     for X_t in X_sims:
         j = 0
-        # TODO: try including curves that die out
+        # NOTE: now including curves that die out
         # avg_nums[i] += X_t[j] is just adding zeros then to the bins
         # so we can ignore those bins, and break out of the linear search
         for i, time in enumerate(times):

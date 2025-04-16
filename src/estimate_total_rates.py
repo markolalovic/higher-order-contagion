@@ -53,9 +53,17 @@ def list_all_ODEs_using_estimates(g, ak_hats, bk_hats, mu):
     return ode_system_complete
 
 def calculate_estimates(X_sims, N, min_Tk_threshold=1e-6):
-    r''' Calculates and returns estimates of a_k, b_k, c_k based on:
-        * MLE estimators: \widehat{a}_{k}, \widehat{b}_{k}, \widehat{c}_{k}
-        * Empirical estimators: \widetilde{a}_{k}, \widetilde{b}_{k}
+    r''' Calculates estimates of a_k, b_k, c_k based on:
+
+        * MLE estimators: these have a hat
+
+        * Empirical estimators: these have tilde # TODO: later
+    
+    # Returns full M = N + 1 length arrays a_k_hat, b_k_hat, ...
+
+    TODO: 
+        * c_k hat is used for diagnostics only, could be used to see if it has effect!
+        * since a_k, b_k hats could be underestimated, but c_k not since we use actual c_k
     '''
     # initialize the aggregated stats
     T_k = np.zeros(N + 1, dtype=float)
@@ -69,9 +77,6 @@ def calculate_estimates(X_sims, N, min_Tk_threshold=1e-6):
 
     total_events_processed = 0
     for sim_idx, X_t in enumerate(X_sims):
-        # drop last two events
-        # df_sim = df_sim.iloc[:-2]
-
         times = X_t[0]
         infected_counts = X_t[2]
         event_types = X_t[3]
@@ -88,7 +93,7 @@ def calculate_estimates(X_sims, N, min_Tk_threshold=1e-6):
                 event_type = actual_event_types[i]
 
                 T_k[k] += duration
-
+                # checking event_types, so no need to drop events (last two events)
                 if event_type == 'PW':
                     U_k[k] += 1
                 elif event_type == 'HO':
@@ -97,6 +102,7 @@ def calculate_estimates(X_sims, N, min_Tk_threshold=1e-6):
                     D_k[k] += 1
                 
                 total_events_processed += 1
+    print(f"total_events_processed: {total_events_processed}")
     
     # calculate MLEs only for states with sufficient observation time!
     for k in range(N + 1):
@@ -105,15 +111,14 @@ def calculate_estimates(X_sims, N, min_Tk_threshold=1e-6):
             b_k_hat[k] = V_k[k] / T_k[k]
             c_k_hat[k] = D_k[k] / T_k[k]
         # else: estimates remain 0
-
-    # Return full N+1 length arrays
+    
     return {
         "a_k_hat": a_k_hat,
         "b_k_hat": b_k_hat,
-        "c_k_hat": c_k_hat,
-        # "a_k_tilde": a_k_tilde, # Excluded for now
-        # "b_k_tilde": b_k_tilde, # Excluded for now
-        "T_k": T_k, # Also return T_k for diagnostics
+        "c_k_hat": c_k_hat, # c_k_hat for diagnostics
+        # "a_k_tilde": a_k_tilde, # TODO: later
+        # "b_k_tilde": b_k_tilde, # TODO: later
+        "T_k": T_k, # T_k for diagnostics
         "U_k": U_k,
         "V_k": V_k,
         "D_k": D_k,
