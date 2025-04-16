@@ -20,7 +20,8 @@ positions = {0: (0, 1), 1: (0, 0), 2: (1, 1), 3: (1, 0)}
 file_name = "../figures/hypergraphs/example_hypergraph.svg"
 draw_hypergraph(g, pos=positions, fname=file_name)
 ```
-![Example Hypergraph](figures/hypergraphs/example_hypergraph.svg)
+<!-- ![Example Hypergraph](figures/hypergraphs/example_hypergraph.svg) -->
+<img src="figures/hypergraphs/example_hypergraph.svg" alt="Example Hypergraph" width="400" height="400">
 
 ### Cycle hypergraph
 Example of a cycle / ring hypergraph on 10 nodes:
