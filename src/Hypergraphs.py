@@ -5,6 +5,7 @@
 """
 
 from itertools import combinations
+from math import comb
 import random
 
 class EmptyHypergraph:
@@ -46,9 +47,9 @@ class EmptyHypergraph:
     def neighbors(self, i, order):
         r"""
         Returns neighbors of node `i` for a given order:
-          * g.neighbors(i, 1) is the list of all edge neighbors of i
-          * g.neighbors(i, 2) is the list of all hyperedge neighbors of i
-            
+          * g.neighbors(i, 1) is the list of all 2-node neighbors of i
+          * g.neighbors(i, 2) is the list of all 3-node neighbors of i
+        
         Must run g.set_edges(edges) first!
         """
         return list(self.neighbors_memo[order].get(i, [])) # converts to a list
@@ -87,43 +88,75 @@ class EmptyHypergraph:
 
 class CompleteHypergraph(EmptyHypergraph):
     r"""
-    Complete hypergraph on `N` nodes, in which each edge and hyperedge is present. 
+    Complete hypergraph on `N` nodes, in which each edge is present.
+    Overrides most methods of EmptyHypergraph to not store edges explicitly.
     """
-    # TODO: simplify, no need to list the edges, and precompute the neighbors
     def __init__(self, N):
-        super().__init__(N) # initializes N, nodes and empty set of edges
+        super().__init__(N) # initializes N, nodes
         self.name = "Complete hypergraph"
-        self.set_edges(self.generate_complete_hypergraph()) # precompute the neighbors
-
-    def generate_complete_hypergraph(self):
+        # self.edges and self.neighbors_memo are empty, generates nbs and edges on demand
+    
+    def neighbors(self, i, order):
+        other_nodes = [j for j in range(self.N) if j != i]
+        if order == 1:
+            return other_nodes
+        elif order == 2:
+            return list(combinations(other_nodes, 2))
+    
+    def get_edges(self, order=1):
         nodes = list(range(self.N))
-        edges = list(combinations(nodes, 2)) # all possible edges
-        edges.extend(combinations(nodes, 3)) # all possible hyperedges
-        return edges
+        if order == 1:
+            return list(combinations(nodes, 2))
+        elif order == 2:
+            return list(combinations(nodes, 3))
+
+    def print(self):
+        print(f"\t{self.name} on {self.N} nodes with {comb(self.N, 2) + comb(self.N, 3)} edges.\n")
+
+    def summary(self):
+        nodes = list(range(self.N))
+        pw_edges = list(combinations(nodes, 2))
+        ho_edges = list(combinations(nodes, 3))
+        print(f"\t Graph name: {self.name}")
+        print(f"\t Number of nodes N = {self.N}")
+        
+        print("\t nodes: ")
+        for node in self.nodes.keys():
+            print(f"\t\t{node}: {self.nodes[node]}")
+        
+        print("\t 2-node edges: ")
+        for edge in pw_edges:
+            print(f"\t\t{edge}")
+        print("\t 3-node edges: ")
+        for edge in ho_edges:
+            print(f"\t\t{edge}")
+        print("\n")
 
 class RandomHypergraph(EmptyHypergraph):
     r"""
-    (Binomial) Random hypergraph on `N` nodes, in which each edge and 
-    hyperedge is present independently with probability `p`.
+    (Binomial) Random hypergraph on `N` nodes, in which each 2-node edge and 
+    3-node edge is present independently with probability p1 and p2 respectively.
     """
     def __init__(self, N, p1, p2):
         super().__init__(N)
-        self.p2 = p1 # probability of an edge O(N^2)
-        self.p1 = p2 # prob of a hyperedge should be order N smaller since it scales as O(N^3)
+        self.p1 = p1 # probability of an edge O(N^2)
+        self.p2 = p2 # probability of a 3-node edge should be order N smaller since it scales as O(N^3)
         self.name = "(Binomial) random hypergraph"
         self.set_edges(self.generate_random_hypergraph())
     
     def generate_random_hypergraph(self):
         nodes = list(range(self.N))
+        pw_edges = list(combinations(nodes, 2))
+        ho_edges = list(combinations(nodes, 3))
         edges = []
         
-        # append edges (pairwise edges) with probability p
-        for edge in combinations(nodes, 2):
+        # append 2-node (pairwise) edges with probability p1
+        for edge in pw_edges:
             if random.random() < self.p1:
                 edges.append(edge)
         
-        # append hyperedges (triangles) with probability p
-        for hyperedge in combinations(nodes, 3):
+        # append 3-node (higher-order) edges with probability p2
+        for hyperedge in ho_edges:
             if random.random() < self.p2:
                 edges.append(hyperedge)
         
