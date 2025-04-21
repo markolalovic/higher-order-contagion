@@ -78,26 +78,15 @@ def calculate_estimates(X_sims, N, min_Tk_threshold=1e-9): # Removed time_max, i
             print(f"Skipping: {sim_idx} has less than 3 events")
             continue
 
-        times = X_t[0, :]
+        durations = X_t[1, 1:-1]
         # states should be integers and will be used as indices
-        infected_counts = X_t[2, :].astype(int)
-        event_types = X_t[3, :]
-
-        # durations = X_t[1, :] # TODO: should be the same as diff(times)
-        durations = np.diff(times)
-        states_during_interval = infected_counts[:-1]
-        events_ending_interval = event_types[1:]
+        states_during_interval = X_t[2, :-2].astype(int)
+        events_ending_interval = X_t[3, 1:-1]
 
         for i in range(len(durations)):
             k = states_during_interval[i]
             duration = durations[i]
             event_type = events_ending_interval[i]
-            
-            # Skipping the exit events, could also check Event type
-            if duration < 0:
-                # NOTE: on event_type None (on exit), no counts are incremented, which is correct
-                print(f"Skipping: duration = {duration}, event_index = {event_type}, index = {i}, sim = {sim_idx}")
-                continue
 
             T_k[k] += duration
             total_events_processed += 1

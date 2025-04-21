@@ -13,10 +13,70 @@ from Hypergraphs import RandomHypergraph
 import pandas as pd
 import time
 
+def gillespie_sim_complete(N, beta1, beta2, mu, I0, time_max):
+    r""" 
+    Gillespie algorithm to simulate SIS dynamics on complete (fully-connected) hypergraph only. 
+    Outputs: X_t array with rows: 
+        [time, waiting_time, total_infected, event_type, total_pw_count, total_ho_count]
+    """
+    # initialize
+    k = I0
+    t = 0.0
+    num_sus = N - k
+    total_pw = k * num_sus
+    total_ho = 0.5 * k * (k - 1) * num_sus
+    X_t = [[t, None, k, None, total_pw, total_ho]]
+
+    while t < time_max:
+        if k == 0:
+            print("break: k = 0")
+            break
+
+        num_sus = N - k
+        rate_a = beta1 * k * num_sus # pw infection rate a_k
+        rate_b = beta2 * 0.5 * k * (k - 1) * num_sus # ho infection rate b_k
+        rate_c = mu * k # recovery rate c_k
+
+        total_rate = rate_a + rate_b + rate_c
+        # TODO: check if total_rate is np.close to 0
+
+        # draw waiting time
+        u1 = rng.random()
+        waiting_time = -np.log(u1) / total_rate
+        time_next = t + waiting_time
+        if time_next >= time_max:
+            print("break: time >= time_max")
+            break
+
+        # draw event type
+        u2 = rng.random()
+        threshold = u2 * total_rate
+        event_type = None
+        if threshold < rate_a:
+            event_type = "PW"
+            k += 1
+        elif threshold < rate_a + rate_b:
+            event_type = "HO"
+            k += 1
+        else:
+            event_type = "RC"
+            k -= 1
+        
+        # update time and state
+        t = time_next
+        num_sus = N - k
+        total_pw = k * num_sus
+        total_ho = 0.5 * k * (k - 1) * num_sus
+        X_t.append([t, waiting_time, k, event_type, total_pw, total_ho])
+    
+    # append "exit event" at time_max
+    X_t.append([time_max, None, k, None, None, None])
+    return np.array(X_t, dtype=object).transpose()
+
 def gillespie_sim(g, beta1, beta2, mu, initial_infections, time_max):
     r"""
     Gillespie algorithm to simulate SIS dynamics on a hypergraph g.
-    Outputs: X_t = [time, time_to_event, total_infected, event_type, total_pw, total_ho]
+    Outputs: X_t = [time, waiting_time, total_infected, event_type, total_pw, total_ho]
     """
     g_sim = deepcopy(g)
 
@@ -31,42 +91,36 @@ def gillespie_sim(g, beta1, beta2, mu, initial_infections, time_max):
     total_infected = sum(states)
     time = 0
     event_type = None # initially
-    time_to_event = None # initially
+    waiting_time = None # initially
     # append output to X_t
-    X_t = [[time, time_to_event, total_infected, event_type, total_pw, total_ho]]
+    X_t = [[time, waiting_time, total_infected, event_type, total_pw, total_ho]]
 
     # draw events until time_max or until total_rate drops to 0
     while time < time_max:
-        # if total_rate is 0, no more events are possible, end simulation
-        if np.isclose(total_rate, 0.):
-            print(f"break: total_rate is close to 0")
-            # append output to X_t
-            X_t.append([time_max, None, total_infected, None, None, None])
+        if total_infected == 0:
+            print(f"break: total_infected == 0: {total_infected}, time={time}")
             break
 
         # draw next event
-        node_i, time_to_event, event_type = draw_next_event(total_rate, g_sim, beta1, beta2)
-        time += time_to_event
+        node_i, waiting_time, event_type = draw_next_event(total_rate, g_sim, beta1, beta2)
+        time += waiting_time
+
+        if time >= time_max:
+            print(f"exited on time={time}, waiting_time={waiting_time}")
+            break
 
         # update states
         total_infected, total_rate, total_pw, total_ho = update_states(
             g_sim, total_infected, node_i, total_rate, total_pw, total_ho, beta1, beta2, mu)
         
-        if total_infected == 0:
-            print(f"break: total_infected == 0: {total_infected}")
-            # append output to X_t
-            time += time_to_event
-            X_t.append([time, time_to_event, total_infected, event_type, None, None])
-            break
-        
         # TODO: assert equal: total_rate, sum(node["rate"] for node in g_sim.nodes.values())
         total_rate = sum(node["rate"] for node in g_sim.nodes.values())
+        
         # append output to X_t
-        X_t.append([time, time_to_event, total_infected, event_type, total_pw, total_ho])
+        X_t.append([time, waiting_time, total_infected, event_type, total_pw, total_ho])
     
     # on exit append to X_t
-    print(f"exited while loop: time={time}, time_to_event={time_to_event}")
-    X_t.append([time_max, time_to_event, total_infected, None, None, None])
+    X_t.append([time_max, None, total_infected, None, None, None])
 
     return np.array(X_t).transpose()
 
@@ -110,10 +164,10 @@ def initialize_total_rate(g_sim, beta1, beta2, mu):
 
 def draw_next_event(total_rate, g_sim, beta1, beta2):
     r"""
-    Returns the selected `node_i` and waiting time `time_to_event` until the next event. 
+    Returns the selected node i, waiting time until the next event, and event type. 
     """
     u1, u2, u3 = rng.random(3)
-    time_to_event = -np.log(1. - u1) / total_rate
+    waiting_time = -np.log(1. - u1) / total_rate
     # TODO: could just set `-np.log(u1) / total_rate` as `u1` already in (0, 1)
     
     # find the selected node_i using linear search
@@ -156,7 +210,7 @@ def draw_next_event(total_rate, g_sim, beta1, beta2):
         # recovery (I --> S) event
         event_type = "RC"
 
-    return node_i, time_to_event, event_type
+    return node_i, waiting_time, event_type
 
 def update_states(g_sim, total_infected, node_i, total_rate, total_pw, total_ho, beta1, beta2, mu):
     r"""
@@ -164,7 +218,7 @@ def update_states(g_sim, total_infected, node_i, total_rate, total_pw, total_ho,
     """
     state_before = g_sim.nodes[node_i]["state"]
     if state_before == 0:
-        # it doesn"t matter, how it became infected, we need to update both PW and HO rates
+        # it doesn't matter, how it became infected, we need to update both PW and HO rates
         # update count of infected and node i state
         total_infected += 1
         g_sim.nodes[node_i]["state"] = np.int64(1)
@@ -287,22 +341,22 @@ def get_average(X_sims, time_max, nsims, delta_t=0.1, selected=2):
 def export_to_csv(X_sims, file_name):
     # TODO: move to utils.py
     # Single X_t:
-    # [time, time_to_event, infected, event_type, total_pw, total_ho]
+    # [time, waiting_time, total_infected, event_type, total_pw, total_ho]
     # Columns: 
-    # [nsim, time, time_to_event, infected, event_type, total_pw, total_ho]
+    # [nsim, time, waiting_time, total_infected, event_type, total_pw, total_ho]
     # file_name = "../data/sim_complete.csv"
     data = []
     for nsim, X_t in enumerate(X_sims, start=1):
-        times, times_to_event, infected, event_types, total_pws, total_hos = \
+        times, waiting_times, total_infected, event_types, total_pw, total_ho = \
             X_t[0], X_t[1], X_t[2], X_t[3], X_t[4], X_t[5]
         nsim_column = np.full(len(times), nsim)
         data.append(pd.DataFrame({"nsim": nsim_column, 
                                   "time": times, 
-                                  "time_to_event": times_to_event,
-                                  "infected": infected,
+                                  "waiting_time": waiting_times,
+                                  "total_infected": total_infected,
                                   "event_type": event_types,
-                                  "total_pw": total_pws,
-                                  "total_ho": total_hos,
+                                  "total_pw": total_pw,
+                                  "total_ho": total_ho,
                                   }))
     df = pd.concat(data, ignore_index=True)
     df.to_csv(file_name, index=False)
@@ -348,21 +402,17 @@ def run_on_random():
 
 def run_on_complete():
     # TODO: could put all setups in `config.py` 
-    # the reason for this is that the rates in the gillespie are different from rates in the ODE limit
-    # in the ODE we have \tau = \beta_1 / N, and \delta = beta_2 / N^2,
-    # e.g. if \tau = 1 and \delta = 2 in the ODE, then in gillespie we need to use \tau / N, and \delta / N^2
-    # TODO: check the paper with Iacopo and ..
-    # TODO: don"t need to use this
     nsims = 10
     N = 100
-    I0 = 10         # number of initial infected
+    I0 = 10  # number of initial infected
 
     beta1 = 2 / N       # pairwise infection rate
     beta2 = 4 / (N**2)  # hyperedge contagion rate
     mu    = 1           # recovery rate
     
-    time_max = 10   # maximum time duration
+    time_max = 10  # maximum time duration
     initial_infections = list(range(I0)) # which nodes are infected at t=0
+
     g = CompleteHypergraph(N)
     print(f"Setup: \n")
     print(f"\tH = {g.__class__.__name__}, N = {N}, I0 = {I0}\n")
@@ -377,8 +427,6 @@ def run_on_complete():
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"elapsed_time: {elapsed_time:.2f} seconds for {nsims} simulations with {N} nodes")
-
-
 
 if __name__ == "__main__":
     run_on_complete()
