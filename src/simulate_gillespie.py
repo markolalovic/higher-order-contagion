@@ -15,9 +15,12 @@ import time
 
 def gillespie_sim_complete(N, beta1, beta2, mu, I0, time_max):
     r""" 
-    Gillespie algorithm to simulate SIS dynamics on complete (fully-connected) hypergraph only. 
+    Gillespie algorithm to simulate SIS dynamics on complete (fully-connected) hypergraph ONLY. 
+    
+    No explicit graph structure, neighbor lookups, and individual node rate updates, making it significantly faster.
+
     Outputs: X_t array with rows: 
-        [time, waiting_time, total_infected, event_type, total_pw_count, total_ho_count]
+        [t, waiting_time, total_infected, event_type, total_pw_count, total_ho_count]
     """
     # initialize
     k = I0
@@ -31,7 +34,8 @@ def gillespie_sim_complete(N, beta1, beta2, mu, I0, time_max):
         if k == 0:
             print("break: k = 0")
             break
-
+        
+        # TODO: switch to scipy.special.comb for b_k rate, for large N, k
         num_sus = N - k
         rate_a = beta1 * k * num_sus # pw infection rate a_k
         rate_b = beta2 * 0.5 * k * (k - 1) * num_sus # ho infection rate b_k
@@ -76,7 +80,9 @@ def gillespie_sim_complete(N, beta1, beta2, mu, I0, time_max):
 def gillespie_sim(g, beta1, beta2, mu, initial_infections, time_max):
     r"""
     Gillespie algorithm to simulate SIS dynamics on a hypergraph g.
-    Outputs: X_t = [time, waiting_time, total_infected, event_type, total_pw, total_ho]
+
+    Outputs: X_t array with rows: 
+        [t, waiting_time, total_infected, event_type, total_pw_count, total_ho_count]
     """
     g_sim = deepcopy(g)
 
@@ -86,27 +92,27 @@ def gillespie_sim(g, beta1, beta2, mu, initial_infections, time_max):
     for i, state in enumerate(states):
         g_sim.nodes[i]["state"] = state
 
-    # initial total number of infected nodes, initial `time``, and initial `total_rate`
+    # initial total number of infected nodes, initial time `t`, and initial `total_rate`
     total_rate, total_pw, total_ho = initialize_total_rate(g_sim, beta1, beta2, mu)
     total_infected = sum(states)
-    time = 0
+    t = 0
     event_type = None # initially
     waiting_time = None # initially
     # append output to X_t
-    X_t = [[time, waiting_time, total_infected, event_type, total_pw, total_ho]]
+    X_t = [[t, waiting_time, total_infected, event_type, total_pw, total_ho]]
 
     # draw events until time_max or until total_rate drops to 0
-    while time < time_max:
+    while t < time_max:
         if total_infected == 0:
-            print(f"break: total_infected == 0: {total_infected}, time={time}")
+            print(f"break: total_infected == 0: {total_infected}, time={t}")
             break
 
         # draw next event
         node_i, waiting_time, event_type = draw_next_event(total_rate, g_sim, beta1, beta2)
-        time += waiting_time
+        t += waiting_time
 
-        if time >= time_max:
-            print(f"exited on time={time}, waiting_time={waiting_time}")
+        if t >= time_max:
+            print(f"exited on time={t}, waiting_time={waiting_time}")
             break
 
         # update states
@@ -117,7 +123,7 @@ def gillespie_sim(g, beta1, beta2, mu, initial_infections, time_max):
         total_rate = sum(node["rate"] for node in g_sim.nodes.values())
         
         # append output to X_t
-        X_t.append([time, waiting_time, total_infected, event_type, total_pw, total_ho])
+        X_t.append([t, waiting_time, total_infected, event_type, total_pw, total_ho])
     
     # on exit append to X_t
     X_t.append([time_max, None, total_infected, None, None, None])
@@ -329,10 +335,10 @@ def get_average(X_sims, time_max, nsims, delta_t=0.1, selected=2):
         # NOTE: now including curves that die out
         # avg_nums[i] += X_t[j] is just adding zeros then to the bins
         # so we can ignore those bins, and break out of the linear search
-        for i, time in enumerate(times):
+        for i, t in enumerate(times):
             avg_nums[i] += X_t[selected][j]
             # move to the next time in times
-            while X_t[0][j] < time:
+            while X_t[0][j] < t:
                 if j == len(X_t[0]) - 1:
                     break
                 j += 1
@@ -341,9 +347,9 @@ def get_average(X_sims, time_max, nsims, delta_t=0.1, selected=2):
 def export_to_csv(X_sims, file_name):
     # TODO: move to utils.py
     # Single X_t:
-    # [time, waiting_time, total_infected, event_type, total_pw, total_ho]
+    # [t, waiting_time, total_infected, event_type, total_pw, total_ho]
     # Columns: 
-    # [nsim, time, waiting_time, total_infected, event_type, total_pw, total_ho]
+    # [nsim, t, waiting_time, total_infected, event_type, total_pw, total_ho]
     # file_name = "../data/sim_complete.csv"
     data = []
     for nsim, X_t in enumerate(X_sims, start=1):
