@@ -10,6 +10,9 @@ from Hypergraphs import CompleteHypergraph
 from simulate_gillespie import *
 from solve_kolmogorov import *
 
+import scipy.linalg
+from scipy.sparse import diags
+
 def list_all_ODEs_using_estimates(g, ak_hats, bk_hats, mu):
     r"""Returns the list of forward Kolmogorov equations dp_{k}(t)/dt = ...
         

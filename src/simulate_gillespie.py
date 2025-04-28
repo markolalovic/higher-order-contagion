@@ -344,6 +344,126 @@ def get_average(X_sims, time_max, nsims, delta_t=0.1, selected=2):
                 j += 1
     return avg_nums / nsims, times
 
+
+def gillespie_linear(N, theta, I0, time_max):
+    r"""
+    This is for testing EM algorithm:
+
+    Gillespie algorithm for a linear birth-death process X(t) with finite state space k \in 0, ..., N
+    
+      * Rates: beta_k = k * beta, mu_k = k * mu
+    
+      * Theta is tuple of parameter values: (beta, mu)
+
+      * I0 initial state (number of infected at t = 0)
+    
+      * time_max: maximum time of observation
+
+      * Returns arrays: times, X(t)
+    """
+    beta_rate, mu_rate = theta
+    k = I0
+    t = 0.0
+
+    times = [t]
+    states = [k]
+    while t < time_max:
+        if k == 0:
+            print("break: k = 0")
+            break
+
+        # calculate rates
+        rate_birth = k * beta_rate if k < N else 0.0
+        rate_death = k * mu_rate     if k > 0 else 0.0
+        total_rate = rate_birth + rate_death
+
+        # TODO: if total_rate is np.close to 0
+        if total_rate <= 1e-15:
+             break
+
+        # Time to next event
+        dt = -np.log(rng.random()) / total_rate
+        time_next = t + dt
+
+        if time_next >= time_max:
+            print("break: time >= time_max")
+            break
+
+        # determine event type
+        rand_event = rng.random() * total_rate
+
+        if rand_event < rate_birth:
+            k += 1
+        else:
+            k -= 1
+
+        # update time, and state
+        t = time_next
+        times.append(t)
+        states.append(k)
+
+    # add final time and state at time_max
+    times.append(time_max)
+    states.append(k)
+
+    return np.array(times), np.array(states)
+
+def discretize(X_cont, t_discrete):
+    r"""
+    Extracts the discrete observation (start state, end state, time) from continuous data X.
+
+      * X_cont: tuple from gillespie_linear: (times, states)
+      * t_discrete: time point of the discrete observation
+
+      * Returns tuple: Y = (a, b, t) where a = X(0), b = X(t_discrete)
+    """
+    times, states = X_cont
+    a = states[0]
+
+    # find index of the time point just <= t_discrete
+    # 'right' finds the index where t_discrete would be inserted
+    # subtracting 1 gives the index of the state active at `t_discrete`
+    idx_at_t = np.searchsorted(times, t_discrete, side='right') - 1
+    b = states[idx_at_t] # state at time_discrete
+    
+    return int(a), int(b), t_discrete
+
+def discretize_sequence(X_cont, t_start, t_end, num_intervals):
+    """
+    Extracts a sequence of discrete observations (start state, end state, interval duration)
+    from continuous simulation data at equidistant points.
+
+      * X_cont: continuously-observed data from gillespie_linear (times, states)
+      * t_start: start time of the observation
+      * t_end: end time of the observation
+      * num_intervals: number of equidistant intervals to partition [t_start, t_end]
+
+      * Returns Y_sequence = [(a_0, a_1, dt), (a_1, a_2, dt), ..., (a_{n-1}, a_n, dt)]
+      * where dt = (t_end - t_start) / num_intervals
+    """
+    times, states = X_cont
+
+    # define the equidistant observation time points
+    observation_times = np.linspace(t_start, t_end, num_intervals + 1)
+    dt = observation_times[1] - observation_times[0]  # interval duration
+
+    Y_sequence = []
+    observed_states = []
+    # find state at each observation time point
+    for t_obs in observation_times:
+        # find index of the time point just <= t_obs
+        idx_at_t = np.searchsorted(times, t_obs, side='right') - 1
+        observed_states.append(int(states[idx_at_t]))
+
+    # list of interval observations (a, b, dt)
+    for i in range(num_intervals):
+        a = observed_states[i]
+        b = observed_states[i+1]
+        Y_sequence.append((a, b, dt))
+
+    return Y_sequence
+
+
 def export_to_csv(X_sims, file_name):
     # TODO: move to utils.py
     # Single X_t:
