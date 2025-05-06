@@ -4,14 +4,14 @@ import numpy as np
 import matplotlib.pylab as plt
 from scipy.integrate import solve_ivp
 from scipy.special import comb
-import pickle
 
 from Hypergraphs import CompleteHypergraph
 from simulate_gillespie import *
 from solve_kolmogorov import *
-
+import birdepy as bd
 import scipy.linalg
 from scipy.sparse import diags
+import pickle
 
 def list_all_ODEs_using_estimates(g, ak_hats, bk_hats, mu):
     r"""Returns the list of forward Kolmogorov equations dp_{k}(t)/dt = ...
@@ -123,6 +123,98 @@ def calculate_estimates(X_sims, N, min_Tk_threshold=1e-9): # Removed time_max, i
         "V_k": V_k,
         "D_k": D_k,
     }
+
+
+def complete_birth_rate(z, p):
+    N_fixed = 100 # TODO: write a wrapper
+    k = int(z) # integer state
+    # use these directly without dividing by N or N^2 first
+    beta1_unscaled, beta2_unscaled = p # e.g. p = [2.4, 4.4]
+    
+    rate_a = (beta1_unscaled / N_fixed) * k * (N_fixed - k)
+    rate_b = 0.0
+    if k >= 2:
+        rate_b = (beta2_unscaled / (N_fixed**2)) * comb(k, 2, exact=False) * (N_fixed - k)
+    
+    return max(0.0, rate_a + rate_b)
+
+def complete_death_rate(z, p):
+    mu_fixed = 1.0 # TODO: write a wrapper
+    k = int(z) # integer state
+    # set recovery rate c_k = mu * k
+    rate_c = mu_fixed * k
+
+    return max(0.0, rate_c)
+
+def estimate_em(t_data_bd, p_data_bd, p0_guess, p_bounds):
+    # estimating beta1, beta2
+    est_em_custom = bd.estimate(
+        t_data=t_data_bd,
+        p_data=p_data_bd,
+        p0=p0_guess,
+        p_bounds=p_bounds,
+        model='custom',
+        framework='em',
+        scheme='discrete',
+        b_rate=complete_birth_rate,
+        d_rate=complete_death_rate,
+        max_it=100,
+        i_tol=1e-6,
+        se_type='asymptotic',
+        display=True
+    )
+    print(f"Estimated parameters [beta1, beta2]: {est_em_custom.p}")
+    print(f"Standard errors: {est_em_custom.se}")
+    print(f"Log-likelihood: {est_em_custom.val}")
+    print(f"Compute time: {est_em_custom.compute_time:.0f} seconds")    
+    return est_em_custom
+
+def estimate_em_2(t_data_bd, p_data_bd, p0_guess, p_bounds):
+    # estimating beta1, beta2
+    est_em_custom = bd.estimate(
+        t_data=t_data_bd,
+        p_data=p_data_bd,
+        p0=p0_guess,
+        p_bounds=p_bounds,
+        model='custom',
+        # framework='em',
+        scheme='discrete',
+        b_rate=complete_birth_rate,
+        d_rate=complete_death_rate,
+        max_it=100,
+        i_tol=1e-6,
+        # se_type='asymptotic',
+        display=True
+    )
+    print(f"Estimated parameters [beta1, beta2]: {est_em_custom.p}")
+    print(f"Standard errors: {est_em_custom.se}")
+    print(f"Log-likelihood: {est_em_custom.val}")
+    print(f"Compute time: {est_em_custom.compute_time:.0f} seconds")    
+    return est_em_custom
+
+def estimate_em_3(t_data_bd, p_data_bd, p0_guess, p_bounds):
+    # estimating beta1, beta2
+    est_em_custom = bd.estimate(
+        t_data=t_data_bd,
+        p_data=p_data_bd,
+        p0=p0_guess,
+        p_bounds=p_bounds,
+        model='custom',
+        framework='dnm',
+        opt_method='SLSQP',    
+        scheme='discrete',
+        b_rate=complete_birth_rate,
+        d_rate=complete_death_rate,
+        max_it=100,
+        i_tol=1e-6,
+        se_type='asymptotic',
+        display=True
+    )
+    print(f"Estimated parameters [beta1, beta2]: {est_em_custom.p}")
+    print(f"Standard errors: {est_em_custom.se}")
+    print(f"Log-likelihood: {est_em_custom.val}")
+    print(f"Compute time: {est_em_custom.compute_time:.0f} seconds")    
+    return est_em_custom
 
 if __name__ == "__main__":
     ## --- Setup --- ##
