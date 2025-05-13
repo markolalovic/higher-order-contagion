@@ -139,7 +139,7 @@ class RandomHypergraph(EmptyHypergraph):
     """
     def __init__(self, N, p1, p2):
         super().__init__(N)
-        self.p1 = p1 # probability of an edge O(N^2)
+        self.p1 = p1 # probability of a 2-node edge O(N^2)
         self.p2 = p2 # probability of a 3-node edge should be order N smaller since it scales as O(N^3)
         self.name = "(Binomial) random hypergraph"
         self.set_edges(self.generate_random_hypergraph())

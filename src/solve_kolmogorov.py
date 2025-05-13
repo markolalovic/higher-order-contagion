@@ -30,7 +30,7 @@ def list_all_states(g):
     """
     N = g.number_of_nodes()
     all_states = []
-    if type(g) == CompleteHypergraph and not treat_as_general:
+    if not treat_as_general:
         all_states = list(range(N + 1))
     else:
         # treat_as_general
@@ -55,7 +55,7 @@ def total_SI_pairs_and_SII_triples(g, current_state):
     
     """
     s1, s2 = 0, 0
-    if type(g) == CompleteHypergraph and not treat_as_general:
+    if not treat_as_general:
         k = current_state
         N = g.number_of_nodes()
         s1, s2 = k * (N - k), (1/2) * k * (k - 1) * (N - k)
@@ -243,7 +243,7 @@ def list_all_ODEs_complete(g, beta1, beta2, mu):
         for all states k = 0, 1, ..., N.
     """
     N = g.number_of_nodes()
-    all_states = list_all_states(g)
+    all_states = list(range(N + 1))
     M = len(all_states)
 
     # precompute (cache it as a dictionary to speed things up):
@@ -269,7 +269,7 @@ def list_all_ODEs_complete(g, beta1, beta2, mu):
               # infections from state N - 1, infecting the remaining v
               s1M, s2M = s12_cache[N - 1]
               infection_rate = beta1 * s1M + beta2 * s2M
-              dpdt[N] += infection_rate * p[N - 1] # NOTE: bug fixed N - 1 instead of N!
+              dpdt[N] += infection_rate * p[N - 1]
 
               # or no event, that is none of N infected nodes recovers
               dpdt[N] -= (N * mu) * p[N]
@@ -288,6 +288,57 @@ def list_all_ODEs_complete(g, beta1, beta2, mu):
               dpdt[k] -= outflow_rate * p[k]
       return dpdt
     return ode_system_complete
+
+def list_all_ODEs_random(g, beta1, beta2, mu, p1, p2):
+    r"""Returns the list of forward Kolmogorov equations dp_{k}(t)/dt = ...
+        for all states k = 0, 1, ..., N.
+    """
+    N = g.number_of_nodes()
+    all_states = list(range(N + 1))
+    M = len(all_states)
+
+    # precompute (cache it as a dictionary to speed things up):
+    # {state k: (s1, s2) = total_SI_pairs_and_SII_triples(g, state_k)}
+    # for example if g = CompleteHypergraph(N = 5) then s12_cache is:
+    # {0: (0, 0), 1: (4, 0), 2: (6, 3), 3: (6, 6), 4: (4, 6), 5: (0, 0)}
+    s12_cache = {}
+    for state_k_ in all_states:
+        s1_, s2_ = total_SI_pairs_and_SII_triples(g, state_k_)
+        s12_cache[state_k_] = (s1_, s2_)
+    
+    def ode_system_random(t, p):
+      r"""Given p = p(t) a vector of length M, returns dp / dt where p[i] is:
+
+        * In case of complete hypergraph p[i] is simply p[k]:
+          p[i] = p[k] = p_{k}(t) for state_k, such that: all_states[i] = state_k = k
+      """
+      dpdt = np.zeros(M, dtype=float)
+      for k in range(M):
+          if k == 0:
+              dpdt[0] = mu * p[1]
+          elif k == N:
+              # infections from state N - 1, infecting the remaining v
+              s1M, s2M = s12_cache[N - 1]
+              infection_rate = p1 * beta1 * s1M + p2 * beta2 * s2M
+              dpdt[N] += infection_rate * p[N - 1]
+
+              # or no event, that is none of N infected nodes recovers
+              dpdt[N] -= (N * mu) * p[N]
+          else: 
+              # I. infection from state k - 1 to k
+              s1M, s2M = s12_cache[k - 1]
+              infection_rate = p1 * beta1 * s1M + p2 * beta2 * s2M
+              dpdt[k] += infection_rate * p[k - 1]
+
+              # II. recovery from state k + 1 to k
+              dpdt[k] += mu * (k + 1) * p[k + 1]
+
+              # III. no event
+              s1K, s2K = s12_cache[k]
+              outflow_rate = p1 * beta1 * s1K + p2 * beta2 * s2K + mu * k
+              dpdt[k] -= outflow_rate * p[k]
+      return dpdt
+    return ode_system_random
 
 def calculate_expected_values(sol):
     r"""Given solution `sol` of forward Kolmogorov equations at times t_i in sol.t, returns:

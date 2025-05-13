@@ -37,7 +37,7 @@ def list_all_ODEs_using_estimates(g, ak_hats, bk_hats, mu):
           elif k == N:
               # infections from state N - 1, infecting the remaining v
               infection_rate = ak_hats[N - 1] + bk_hats[N - 1]
-              dpdt[N] += infection_rate * p[N - 1] # NOTE: bug fixed N - 1 instead of N!
+              dpdt[N] += infection_rate * p[N - 1]
 
               # or no event, that is none of N infected nodes recovers
               dpdt[N] -= (N * mu) * p[N]
