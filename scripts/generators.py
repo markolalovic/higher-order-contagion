@@ -5,9 +5,12 @@
 """
 
 import numpy as np
+import matplotlib.pyplot as plt
 import networkx as nx
 import random
 from scipy.stats import nbinom
+from Hypergraphs import EmptyHypergraph
+import os
 
 # from Federico:
 def ER_like_random_hypergraph(N,p1,p2):
@@ -62,8 +65,78 @@ def p1_p2_ER_like_uncorrelated_hypergraph(k1,k2,N):
     else:
         raise ValueError('Negative probability!')
 
+def test_ER_hypergraph(test_p1_p2=False, test_k1_k2=False):
+    # setup
+    N = 1000
+
+    k1_k2_list = [(3, 1), (6, 2), (10, 3), (20, 6)]
+    (k1, k2) = k1_k2_list[2]
+    print(f"Using (k1, k2) = {(k1, k2)}")
+
+    p1, p2 = p1_p2_ER_like_uncorrelated_hypergraph(k1,k2,N)
+    _, edges, triangles = ER_like_random_hypergraph(N,p1,p2)
+
+    g_edges = []
+    for edge in edges.tolist() + triangles.tolist():
+        g_edges.append(tuple(edge))
+    print(f"g_edges: {g_edges[:5]}, ..., {g_edges[-5:]}")
+    # Using (k1, k2) = (10, 3)
+    # g_edges: [(0, 158), (0, 301), (0, 327), (0, 406), (0, 436)], ..., [(320, 738, 903), (165, 390, 550), (503, 669, 968), (300, 493, 687), (406, 616, 672)]
+
+    print(f"p1 = {p1:.4f}")
+    print(f"p2 = {p2:.8f}")    
+    # p1 = 0.0100
+    # p2 = 0.00000602
+
+    # $p_1 = 0.01 > ln(N)/N \approx 0.0069 \text{ where } E[\text{isolated nodes}] \approx 1$ 
+    # $G$ is connected almost surely..
+
+    if test_p1_p2:
+        max_pw_edges = N * (N - 1) / 2
+        max_ho_edges = N * (N - 1) * (N - 2) / 6
+
+        p1_est = []
+        p2_est = []
+        nsims = 1000
+        for _ in range(nsims):
+            p1, p2 = p1_p2_ER_like_uncorrelated_hypergraph(k1,k2,N)
+            _, edges, triangles = ER_like_random_hypergraph(N,p1,p2)
+            p1_est.append(len(edges) / max_pw_edges)
+            p2_est.append(len(triangles) / max_ho_edges)
+
+        print(f"p1_est = {np.mean(p1_est):.4f}")
+        print(f"p2_est = {np.mean(p2_est):.8f}")
+        # p1 = 0.0100
+        # p2 = 0.00000602        
+        # p1_est = 0.0100
+        # p2_est = 0.00000600
+    
+    if test_k1_k2:
+        k1_est = []
+        k2_est = []
+        nsims = 1000
+        for _ in range(nsims):
+            p1, p2 = p1_p2_ER_like_uncorrelated_hypergraph(k1,k2,N)
+            _, edges, triangles = ER_like_random_hypergraph(N,p1,p2)
+
+            g_type = "random_ER"
+            g = EmptyHypergraph(N)
+            g.name = g_type
+            g.set_edges(g_edges)
+
+            k1_sim = np.mean([len(g.neighbors(i, 1)) for i in list(g.nodes.keys())])
+            k2_sim = np.mean([len(g.neighbors(i, 2)) for i in list(g.nodes.keys())])
+
+            k1_est.append(k1_sim)
+            k2_est.append(k2_sim)
+        
+        print(f"k1_est = {np.mean(k1_est):.4f}")
+        print(f"k2_est = {np.mean(k2_est):.4f}")
+        # Using (k1, k2) = (10, 3)
+        # k1_est = 10.0140
+        # k2_est = 2.8680
+
 # from Federico:
-# configuration model (negative-binomial distributed) 
 def configuration_model_edges(degrees):
     # Create stubs
     stubs = np.repeat(np.arange(len(degrees)), degrees)
@@ -85,6 +158,7 @@ def configuration_model_edges(degrees):
     
     return np.array(edges)
 
+# from Federico:
 def configuration_model_triangles(degrees):
     # Create stubs
     stubs = np.repeat(np.arange(len(degrees)), degrees)
@@ -106,7 +180,156 @@ def configuration_model_triangles(degrees):
             # If invalid, continue searching
             i += 1
     
-    return np.array(triangles)    
+    return np.array(triangles)
+
+def neg_binom_hypergraph(N, k_pw_avg, var_pw, k_ho_avg, var_ho):
+    r"""
+    Generates a hypergraph with pairwise and higher-order degrees drawn
+    from Negative Binomial distributions with parameters, example setup:
+
+      * N = 2000      # number of nodes
+
+      * k_pw_avg = 20 # average degree PW
+      * var_pw = 200  # variance PW
+
+      * k_ho_avg = 6  # average degree HO
+      * var_ho = 100  # variance HO
+    """
+    all_edges = []
+
+    # generate PW edges
+    r_pw = (k_pw_avg**2) / (var_pw - k_pw_avg)
+    p_pw = k_pw_avg / var_pw
+    for _ in range(1000):
+        degrees_pw = nbinom.rvs(r_pw, p_pw, size=N) + 1
+        if np.sum(degrees_pw) % 2 == 0:
+            break
+    edges_pw_list = configuration_model_edges(degrees_pw)
+    all_edges.extend(edges_pw_list)
+
+    # generate HO edges
+    r_ho = (k_ho_avg**2) / (var_ho - k_ho_avg)
+    p_ho = k_ho_avg / var_ho
+    for _ in range(1000):
+        degrees_ho = nbinom.rvs(r_ho, p_ho, size=N) + 1
+        # degrees_ho_stubs = node_triangle_counts * 2   # if these are stubs degreees
+        if np.sum(degrees_ho) % 3 == 0:
+            break
+    edges_ho_list = configuration_model_triangles(degrees_ho)
+    all_edges.extend(edges_ho_list)
+
+    return all_edges, (r_pw, p_pw), (r_ho, p_ho)
+
+def test_neg_binom_hypergraph():
+    # setup
+    N = 2000      # number of nodes
+
+    k_pw_avg = 20 # average degree PW
+    var_pw = 200  # variance PW
+
+    k_ho_avg = 6  # average degree HO
+    var_ho = 100  # variance HO
+
+    all_edges, (r_pw, p_pw), (r_ho, p_ho) = neg_binom_hypergraph(N, k_pw_avg, var_pw, k_ho_avg, var_ho)
+
+    g = EmptyHypergraph(N)
+    g.name = "NegBinom"
+    g.set_edges(all_edges)
+    g.print()
+
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+
+    # PW degrees
+    sim_degrees_pw = np.zeros(N, dtype=int)
+    for node_idx in range(N):
+        sim_degrees_pw[node_idx] = len(g.neighbors(node_idx, 1))
+
+    # HO degrees: number of 3-node edges (triangles) a node is part of
+    sim_degrees_ho = np.zeros(N, dtype=int)
+    for node_idx in range(N):
+        sim_degrees_ho[node_idx] = len(g.neighbors(node_idx, 2))
+
+    max_degree_pw = np.max(sim_degrees_pw) if len(sim_degrees_pw) > 0 else 0
+    var_degree_pw = np.var(sim_degrees_pw) if len(sim_degrees_pw) > 0 else 0
+    avg_degree_pw = np.mean(sim_degrees_pw) if len(sim_degrees_pw) > 0 else 0
+    bins_pw = np.arange(-0.5, max_degree_pw + 1.5, 1)
+
+    # PW degrees
+    axes[0].hist(sim_degrees_pw, bins=bins_pw, density=True,
+                alpha=0.7, label='Simulated PW Degrees', color='blue', ec='black')
+
+    k_values_pw = np.arange(0, max_degree_pw + 1)
+    pmf_pw = nbinom.pmf(k_values_pw - 1, r_pw, p_pw) # -1 because +1 was added in generation
+    axes[0].plot(k_values_pw, pmf_pw, ms=4, color='black',
+                label=f'NegBinom PMF (r={r_pw:.2f}, p={p_pw:.2f}')
+
+    axes[0].axvline(avg_degree_pw, color="red", linestyle='--', lw=2,
+                    label=f"Avg. PW Degree = {avg_degree_pw:.2f}")
+
+    axes[0].set_xlabel('PW Degree')
+    axes[0].set_ylabel('Density')
+    axes[0].legend()
+    axes[0].grid(True, linestyle=':', alpha=0.7)
+    axes[0].set_xlim(left=-1)
+
+    # HO degrees
+    max_degree_ho = np.max(sim_degrees_ho) if len(sim_degrees_ho) > 0 else 0
+    var_degree_ho = np.var(sim_degrees_ho) if len(sim_degrees_ho) > 0 else 0
+    avg_degree_ho = np.mean(sim_degrees_ho) if len(sim_degrees_ho) > 0 else 0
+    bins_ho = np.arange(-0.5, max_degree_ho + 1.5, 1)
+
+    axes[1].hist(sim_degrees_ho, bins=bins_ho, density=True,
+                alpha=0.7, label='Simulated HO Degrees', color='blue', ec='black')
+
+    k_values_ho = np.arange(0, max_degree_ho + 1)
+    pmf_ho = nbinom.pmf(k_values_ho - 1, r_ho, p_ho) # -1 because +1 was added in generation
+    axes[1].plot(k_values_ho, pmf_ho, ms=4, color='black',
+                label=f'NegBinom PMF (r={r_ho:.2f}, p={p_ho:.2f})')
+
+    axes[1].axvline(avg_degree_ho, color="red", linestyle='--', lw=2,
+                    label=f"Avg. HO Degree = {avg_degree_ho:.2f}")
+
+    axes[1].set_xlabel('HO Degree')
+    axes[1].set_ylabel('Density')
+    axes[1].legend()
+    axes[1].grid(True, linestyle=':', alpha=0.7)
+    axes[1].set_xlim(left=-1)
+
+    # add also variances as text
+    print(f"var_degree_pw = {np.mean(var_degree_pw):.4f}")
+    print(f"var_degree_ho = {np.mean(var_degree_ho):.4f}")
+
+    text_x, text_y = 0.62, 0.81
+    text_var_degree_pw = f"Variance PW Degree = {var_degree_pw:.2f}"
+    axes[0].text(text_x, text_y, text_var_degree_pw,
+                transform=axes[0].transAxes,
+                fontsize=10,
+                verticalalignment='top',
+                horizontalalignment='left',
+                bbox=dict(fc='white', alpha=1))
+
+    text_var_degree_ho = f"Variance HO Degree = {var_degree_ho:.2f}"
+    axes[1].text(text_x, text_y, text_var_degree_ho,
+                transform=axes[1].transAxes,
+                fontsize=10,
+                verticalalignment='top',
+                horizontalalignment='left',
+                bbox=dict(fc='white', alpha=1))
+
+    plt.tight_layout(rect=[0, 0.03, 1, 0.93])
+    fig_title = f"Degree distributions for H = {g.name}: N = {N} with:" 
+    fig_title += f" k_pw = {k_pw_avg}, var_pw = {var_pw}, k_ho = {k_ho_avg}, var_ho = {var_ho}"
+    fig_title += " drawn from Negative binomial distribution shifted by +1"
+    fig.suptitle(fig_title)
+
+    name = f"neg_binom_hypergraph_degree_distributions"
+    save_dir = "../figures/hypergraphs/"
+    save_path = os.path.join(save_dir, f"{name}.pdf")
+    fig.savefig(save_path, format="pdf", bbox_inches="tight")
+    print(f"Figure saved to: {save_path}")
+
+    plt.show()
+
 
 # from Federico:
 def random_regular_hypergraph(k_1,k_2, N, seed=None):
