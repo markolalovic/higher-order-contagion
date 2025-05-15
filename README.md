@@ -1,9 +1,10 @@
 # higher-order-contagion
-Code for learning pairwise and higher-order rates of complex contagion on higher-order networks using birth-and-death processes. We model higher-order networks using hypergraphs.
+Code for learning pairwise and higher-order rates of complex contagion on higher-order networks using birth-and-death processes. Higher-order networks can be modeled using hypergraphs or simplicial complexes.
 
 ## Examples
+TODO: add examples of simplicial complex, more heterogeneous random hypergraph, and the star graph.
 
-### Simple Hypergraph
+### Simple hypergraph
 Example of a hypergraph on 4 nodes with four 2-node edges and one 3-node edge:
 ```python
 from Hypergraphs import EmptyHypergraph
@@ -20,7 +21,6 @@ positions = {0: (0, 1), 1: (0, 0), 2: (1, 1), 3: (1, 0)}
 file_name = "../figures/hypergraphs/example_hypergraph.svg"
 draw_hypergraph(g, pos=positions, fname=file_name)
 ```
-<!-- ![Example Hypergraph](figures/hypergraphs/example_hypergraph.svg) -->
 <img src="figures/hypergraphs/example_hypergraph.svg" alt="Example Hypergraph" width="400" height="400">
 
 ### Cycle hypergraph
@@ -44,10 +44,7 @@ g.set_edges(edges)
 file_name = "../figures/hypergraphs/cycle_hypergraph.svg"
 draw_hypergraph(g, fname=file_name)
 ```
-<!-- ![Cycle Hypergraph](figures/hypergraphs/cycle_hypergraph.svg)
- -->
 <img src="figures/hypergraphs/cycle_hypergraph.svg" alt="Cycle Hypergraph" width="450" height="450">
-
 
 ## Installation
 ```bash
