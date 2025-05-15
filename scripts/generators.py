@@ -1,7 +1,11 @@
-""" Hypergraph generators from Federico:
+"""
+Hypergraph generators:
   * Erdos-Renyi like random hypergraph
-  * configuration model TODO: draw degrees scale-free k^(-\gamma) 
-  * random regular hypergraph TODO: ensure uniqueness of in-group and groups of 3-nodes picked
+  * Scale-free hypergraph using configuration model  
+  * Regular hypergraph TODO: ensure unique vertices and no repeated triangles
+
+Commented out:
+  * NegBinom hypergraph
 """
 
 import numpy as np
@@ -11,6 +15,10 @@ import random
 from scipy.stats import nbinom
 from Hypergraphs import EmptyHypergraph
 import os
+
+from scipy.stats import zipf # for power-law Zeta distribution
+# from itertools import combinations
+from scipy.special import comb
 
 # from Federico:
 def ER_like_random_hypergraph(N,p1,p2):
@@ -57,6 +65,7 @@ def ER_like_random_hypergraph(N,p1,p2):
     
     return G, edges, triangles
 
+# from Federico:
 def p1_p2_ER_like_uncorrelated_hypergraph(k1,k2,N):
     p2 = (2*k2)/((N-1)*(N-2))
     p1 = (k1)/((N-1))
@@ -161,7 +170,7 @@ def configuration_model_edges(degrees):
 # from Federico:
 def configuration_model_triangles(degrees):
     # Create stubs
-    stubs = np.repeat(np.arange(len(degrees)), degrees)
+    stubs = np.repeat(np.arange(len(degrees)), degrees) # "weighted list"
     np.random.shuffle(stubs)
     
     # Create triangles
@@ -182,7 +191,240 @@ def configuration_model_triangles(degrees):
     
     return np.array(triangles)
 
-def neg_binom_hypergraph(N, k_pw_avg, var_pw, k_ho_avg, var_ho):
+def scale_free_hypergraph(N, gamma_pw, k_min_pw, gamma_ho, k_min_ho, attempts=1000):
+    r"""
+    Generates a hypergraph with degree sequence from a power-law distribution:
+
+      P(k) \propto k^-gamma
+
+    Using:
+      * scipy.stats.zipf which gives P(k) proportional to k**(-gamma) for k = 1, 2, 3 ...
+      * and clip degrees between k_min and k_max
+    
+    Example setup:
+        * N = 2000        # number of nodes
+
+        * gamma_pw = 2.5  # exponent for scale-free networks
+        * k_min_pw = 2    # minimum pairwise degree
+
+        * gamma_ho = 2.5  # can be different for HO interactions
+        * k_min_ho = 1    # minimum number of triangles a node is in
+    """
+    all_edges = []
+    k_max_pw = N - 1 # maximum PW degree
+    k_max_ho = comb(N - 1, 2, exact=True) # maximum HO degree
+
+    # generate PW edges
+    for _ in range(attempts):        
+        degrees_pw = zipf.rvs(gamma_pw, size=N)
+        degrees_pw = np.clip(degrees_pw, k_min_pw, k_max_pw)
+        if np.sum(degrees_pw) % 2 == 0:
+            break
+    edges_pw_list = configuration_model_edges(degrees_pw)
+    all_edges.extend(edges_pw_list)
+
+    # generate HO edges
+    for _ in range(attempts):
+        # degrees_ho = target number of triangles for each node
+        degrees_ho = zipf.rvs(gamma_ho, size=N)
+        degrees_ho = np.clip(degrees_ho, k_min_ho, k_max_ho)
+        # TODO: convert this to stubs for the configuration model
+        # NOTE: each node contributes 2 stubs for every triangle it is in
+        # degrees_ho = degrees_ho * 2
+        # NOTE: each triangle consumes 3 * 2 = 6 stubs in total
+        if np.sum(degrees_ho) % 3 == 0:
+            break
+    triangles_ho_list = configuration_model_triangles(degrees_ho)
+    all_edges.extend(triangles_ho_list)
+
+    return all_edges, degrees_pw, degrees_ho
+
+def test_scale_free_hypergraph():
+    # example setup
+    N = 2000        # number of nodes
+
+    gamma_pw = 2.5  # exponent for scale-free networks
+    k_min_pw = 2    # minimum pairwise degree
+
+    gamma_ho = 2.5  # can be different for HO interactions
+    k_min_ho = 2    # minimum number of triangles a node is in
+
+    all_edges, degrees_pw, degrees_ho = scale_free_hypergraph(
+            N, gamma_pw, k_min_pw, gamma_ho, k_min_ho)
+
+    g = EmptyHypergraph(N)
+    g.name = "ScaleFree"
+    g.set_edges(all_edges)
+    g.print()
+    
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+    
+    # --------------------------------------------
+    # PW degrees
+    # --------------------------------------------
+    # generated sequence of degrees
+    counts_pw, bins_pw = np.histogram(degrees_pw, bins=np.logspace(np.log10(max(1, k_min_pw)), np.log10(np.max(degrees_pw) + 1), 30), density=True)
+    bin_centers_pw = (bins_pw[:-1] + bins_pw[1:]) / 2
+    axes[0].loglog(bin_centers_pw, counts_pw, 'o', color='blue', 
+                   alpha=0.7, label='Sequence PW Degrees')
+    # simulated degrees
+    sim_degrees_pw = np.zeros(N, dtype=int)
+    for node_idx in range(N):
+        sim_degrees_pw[node_idx] = len(g.neighbors(node_idx, 1)) # NOTE: order = 1
+    
+    counts_pw, bins_pw = np.histogram(sim_degrees_pw, bins=np.logspace(np.log10(max(1, k_min_pw)), np.log10(np.max(sim_degrees_pw) + 1), 30), density=True)
+    bin_centers_pw = (bins_pw[:-1] + bins_pw[1:]) / 2
+    axes[0].loglog(bin_centers_pw, counts_pw, 'x', color='red', 
+                   alpha=1, label='Simulated PW Degrees')
+    # theoretical line
+    k_plot = np.logspace(np.log10(k_min_pw), np.log10(np.max(degrees_pw)), 50)
+    axes[0].loglog(k_plot, (k_plot**(-gamma_pw)) / (np.sum(k_plot**(-gamma_pw))),
+                   'k', alpha=0.5, label=f'P(k) ~ k^{-gamma_pw}')
+    
+    axes[0].set_title(f'PW Degrees, Avg = {np.mean(degrees_pw):.2f}, Max = {np.max(degrees_pw):.0f}')
+    axes[0].set_xlabel('Pairwise Degree k_pw')
+    axes[0].set_ylabel('P(k_pw)')
+    axes[0].legend()
+    axes[0].grid(True, which="both", ls=":", alpha=0.7) # grid for loglog
+
+    # --------------------------------------------
+    # HO degrees
+    # --------------------------------------------
+    # generated sequence of degrees
+    counts_ho, bins_ho = np.histogram(degrees_ho, bins=np.logspace(np.log10(max(1, k_min_ho)), np.log10(np.max(degrees_ho) + 1), 30), density=True)
+    bin_centers_ho = (bins_ho[:-1] + bins_ho[1:]) / 2
+    axes[1].loglog(bin_centers_ho, counts_ho, 'o', color='blue', 
+                   alpha=0.7, label='Sequence HO Degrees')
+    
+    # simulated degrees
+    # HO degrees: number of 3-node edges (triangles) a node is part of
+    sim_degrees_ho = np.zeros(N, dtype=int)
+    for node_idx in range(N):
+        sim_degrees_ho[node_idx] = len(g.neighbors(node_idx, 2))
+    
+    counts_ho, bins_ho = np.histogram(sim_degrees_ho, bins=np.logspace(np.log10(max(1, k_min_ho)), np.log10(np.max(sim_degrees_ho) + 1), 30), density=True)
+    bin_centers_ho = (bins_ho[:-1] + bins_ho[1:]) / 2
+    axes[1].loglog(bin_centers_ho, counts_ho, 'x', color='red', 
+                   alpha=1, label='Simulated HO Degrees')
+    # theoretical line
+    k_plot = np.logspace(np.log10(k_min_ho), np.log10(np.max(degrees_ho)), 50)
+    axes[1].loglog(k_plot, (k_plot**(-gamma_ho)) / (np.sum(k_plot**(-gamma_ho))), 
+                   'k', alpha=0.5, label=f'P(k) ~ k^{-gamma_ho}')
+    
+    axes[1].set_title(f'HO Degrees, Avg = {np.mean(degrees_ho):.2f}, Max = {np.max(degrees_ho):.0f}')
+    axes[1].set_xlabel('HO Degree k_ho')
+    axes[1].set_ylabel('P(k_ho)')
+    axes[1].legend()
+    axes[1].grid(True, which="both", ls=":", alpha=0.7) # grid for loglog
+
+    title = f"Degree Distributions {g.name} with N = {N}, "
+    title += f" gamma_pw = {gamma_pw}, k_min_pw = {k_min_pw}, "
+    title += f" gamma_ho = {gamma_ho}, k_min_ho = {k_min_ho} "
+    fig.suptitle(title, fontsize=16)
+    
+    name = f"scale_free_hypergraph_degree_distributions"
+    save_dir = "../figures/hypergraphs/"
+    save_path = os.path.join(save_dir, f"{name}.pdf")
+    fig.savefig(save_path, format="pdf", bbox_inches="tight")
+    print(f"Figure saved to: {save_path}")
+
+    plt.show()
+
+
+# from Federico:
+def random_regular_hypergraph(k_1,k_2, N, seed=None):
+    """
+    N*k_2/3 must be an int!
+    
+    
+    Returns a k-regular random hypergraph, here each node has exactly
+    - 1-degree = k_1
+    - 2-degree = k_2
+    The graph will be composed of k*N nodes.
+    
+    Parameters
+    ----------
+    k : int
+      The degree of each node.
+    N : int
+      The number of nodes for the starting k-regular random graph. 
+      The value of $N \times k$ must be even.
+      The numer of nodes of the hypergraph will be k*N.
+    seed : int, random_state, or None (default)
+        Indicator of random number generation state.
+        
+    """
+    if k_2*N % 3 != 0:
+        raise ValueError('k_2 * N must be a multiple of 3!')
+
+    else:
+        
+        if N*(N-1)*(N-2)/6 < k_2*N/3:
+            raise ValueError('You cannot obtain a regular set of 2-hyperedges with this set of parameters!')
+
+            #raise ValueError('Number of possible triangles is larger then the number of possible triples!')
+        elif N*(N-1)*(N-2)/6 >= k_2*N/3:
+
+            G = nx.random_regular_graph(k_1,N,seed=seed)
+
+            triangles_list = []
+            list_nodes = list(range(N))
+            dict_k2 = {j:0 for j in range(N)}
+            counter = 0
+            while sum(list(dict_k2.values())) != k_2*N:    
+                counter+=1
+                #n1 = np.random.choice(dict_k2[j])
+                a = np.array(list(dict_k2.values())) 
+                b = np.array(list(dict_k2.keys()))
+                n1,n2,n3 = sorted(np.random.choice(b[a!=k_2],3,replace=False))
+               # if dict_k2[n1] != k_2 and dict_k2[n2] != k_2 and dict_k2[n3] != k_2:
+                if (n1,n2,n3) not in triangles_list:
+                    triangles_list.append((n1,n2,n3))
+                    dict_k2[n1] += 1 
+                    dict_k2[n2] +=1 
+                    dict_k2[n3] += 1
+                else:
+                    pass
+                if counter == k_2*N*10:
+                    raise ValueError("Too many attempts, try again")
+                    
+    return G, np.array(triangles_list)
+
+"""
+### generate edges_list 
+
+N=2000
+
+var = 200#640#602
+r = (k1**2)/(var - k1)
+p = k1/var
+
+for aaa in range(1000):
+    degrees = nbinom.rvs(r, p, size=N)+1
+    if sum(degrees)%2 == 0:
+        break
+
+print('Edges set generated')
+
+edges_list = configuration_model_edges(degrees)
+
+
+### generate triangles_list
+var = 600#650#620
+r = (k2**2)/(var - k1)
+p = k2/var
+
+for aaa in range(1000):
+    degrees = nbinom.rvs(r, p, size=N)+1
+    if sum(degrees)%3 == 0:
+        break
+triangles_list_variance_600 = configuration_model_triangles(degrees)
+"""
+
+
+'''
+# Not flexible enough
+def neg_binom_hypergraph(N, k_pw_avg, var_pw, k_ho_avg, var_ho, attempts=1000):
     r"""
     Generates a hypergraph with pairwise and higher-order degrees drawn
     from Negative Binomial distributions with parameters, example setup:
@@ -200,7 +442,7 @@ def neg_binom_hypergraph(N, k_pw_avg, var_pw, k_ho_avg, var_ho):
     # generate PW edges
     r_pw = (k_pw_avg**2) / (var_pw - k_pw_avg)
     p_pw = k_pw_avg / var_pw
-    for _ in range(1000):
+    for _ in range(attempts):
         degrees_pw = nbinom.rvs(r_pw, p_pw, size=N) + 1
         if np.sum(degrees_pw) % 2 == 0:
             break
@@ -210,7 +452,7 @@ def neg_binom_hypergraph(N, k_pw_avg, var_pw, k_ho_avg, var_ho):
     # generate HO edges
     r_ho = (k_ho_avg**2) / (var_ho - k_ho_avg)
     p_ho = k_ho_avg / var_ho
-    for _ in range(1000):
+    for _ in range(attempts):
         degrees_ho = nbinom.rvs(r_ho, p_ho, size=N) + 1
         # degrees_ho_stubs = node_triangle_counts * 2   # if these are stubs degreees
         if np.sum(degrees_ho) % 3 == 0:
@@ -330,94 +572,4 @@ def test_neg_binom_hypergraph():
 
     plt.show()
 
-
-# from Federico:
-def random_regular_hypergraph(k_1,k_2, N, seed=None):
-    """
-    N*k_2/3 must be an int!
-    
-    
-    Returns a k-regular random hypergraph, here each node has exactly
-    - 1-degree = k_1
-    - 2-degree = k_2
-    The graph will be composed of k*N nodes.
-    
-    Parameters
-    ----------
-    k : int
-      The degree of each node.
-    N : int
-      The number of nodes for the starting k-regular random graph. 
-      The value of $N \times k$ must be even.
-      The numer of nodes of the hypergraph will be k*N.
-    seed : int, random_state, or None (default)
-        Indicator of random number generation state.
-        
-    """
-    if k_2*N % 3 != 0:
-        raise ValueError('k_2 * N must be a multiple of 3!')
-
-    else:
-        
-        if N*(N-1)*(N-2)/6 < k_2*N/3:
-            raise ValueError('You cannot obtain a regular set of 2-hyperedges with this set of parameters!')
-
-            #raise ValueError('Number of possible triangles is larger then the number of possible triples!')
-        elif N*(N-1)*(N-2)/6 >= k_2*N/3:
-
-            G = nx.random_regular_graph(k_1,N,seed=seed)
-
-            triangles_list = []
-            list_nodes = list(range(N))
-            dict_k2 = {j:0 for j in range(N)}
-            counter = 0
-            while sum(list(dict_k2.values())) != k_2*N:    
-                counter+=1
-                #n1 = np.random.choice(dict_k2[j])
-                a = np.array(list(dict_k2.values())) 
-                b = np.array(list(dict_k2.keys()))
-                n1,n2,n3 = sorted(np.random.choice(b[a!=k_2],3,replace=False))
-               # if dict_k2[n1] != k_2 and dict_k2[n2] != k_2 and dict_k2[n3] != k_2:
-                if (n1,n2,n3) not in triangles_list:
-                    triangles_list.append((n1,n2,n3))
-                    dict_k2[n1] += 1 
-                    dict_k2[n2] +=1 
-                    dict_k2[n3] += 1
-                else:
-                    pass
-                if counter == k_2*N*10:
-                    raise ValueError("Too many attempts, try again")
-                    
-    return G, np.array(triangles_list)
-
-"""
-### generate edges_list 
-
-N=2000
-
-var = 200#640#602
-r = (k1**2)/(var - k1)
-p = k1/var
-
-for aaa in range(1000):
-    degrees = nbinom.rvs(r, p, size=N)+1
-    if sum(degrees)%2 == 0:
-        break
-
-print('Edges set generated')
-
-edges_list = configuration_model_edges(degrees)
-
-
-### generate triangles_list
-var = 600#650#620
-r = (k2**2)/(var - k1)
-p = k2/var
-
-for aaa in range(1000):
-    degrees = nbinom.rvs(r, p, size=N)+1
-    if sum(degrees)%3 == 0:
-        break
-triangles_list_variance_600 = configuration_model_triangles(degrees)
-"""
-
+'''
