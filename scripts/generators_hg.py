@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 import random
-from scipy.stats import nbinom
+# from scipy.stats import nbinom
 from Hypergraphs import EmptyHypergraph
 import os
 
@@ -86,7 +86,8 @@ def test_ER_hypergraph(test_p1_p2=False, test_k1_k2=False):
     _, edges, triangles = ER_like_random_hypergraph(N,p1,p2)
 
     g_edges = []
-    for edge in edges.tolist() + triangles.tolist():
+    all_edges = edges.tolist() + triangles.tolist()
+    for edge in all_edges:
         g_edges.append(tuple(edge))
     print(f"g_edges: {g_edges[:5]}, ..., {g_edges[-5:]}")
     # Using (k1, k2) = (10, 3)

@@ -2,7 +2,7 @@
 Code for learning pairwise and higher-order rates of complex contagion on higher-order networks using birth-and-death processes. Higher-order networks can be modeled using hypergraphs or simplicial complexes.
 
 ## Examples
-TODO: add examples of simplicial complex, more heterogeneous random hypergraph, and the star graph.
+TODO: add examples of 3 main classes of simplicial complexes, more heterogeneous E-R SC, regular, and generalized scale-free, maybe the star graph too.
 
 ### Simple hypergraph
 Example of a hypergraph on 4 nodes with four 2-node edges and one 3-node edge:
