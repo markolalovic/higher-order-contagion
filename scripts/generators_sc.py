@@ -16,11 +16,14 @@ import random
 def ER_like_simplicial_complex(N,p1,p2):
     """Our model"""
     #I first generate a standard ER graph with edges connected with probability p1
+
     G = nx.fast_gnp_random_graph(N, p1, seed=None)
+    giant_order = N
     if not nx.is_connected(G):
         giant = max(nx.connected_components(G), key=len)
         giant = G.subgraph(giant).copy()
-        print('not connected, but GC has order ', giant.order(), 'and size', giant.size())
+        # print('not connected, but GC has order ', giant.order(), 'and size', giant.size())
+        giant_order = giant.order()
         G = giant
         N=G.order()
         mapping = {nn:0 for nn in list(G.nodes())}
@@ -61,11 +64,11 @@ def ER_like_simplicial_complex(N,p1,p2):
         
     triangles[:,:3]=Triangles
     
-    return G, edges, triangles
+    return giant_order, edges, triangles
 
 def p1_p2_ER_like_simplicial_complex(k1,k2,N):
     p2 = (2.*k2)/((N-1.)*(N-2.))
-    p1 = (k1 - 2.*k2)/((N-1.)- 2.*k2)
+    p1 = (k1 - 2.*k2)/((N-1.)- 2.*k2) # <- this part here
     if (p1>=0) and (p2>=0):
         return p1, p2
     else:
