@@ -1,5 +1,5 @@
 """
-Simplicial complex generators:
+Testing simplicial complex generators:
   * `ER_like_simplicial_complex` and `inter_order_overlap` check
   * `regular_maximum_overlapped_simplicial_complex`
   * `scale_free_simplicial_complex_bianconi_courtney`
@@ -21,6 +21,9 @@ def generate_my_simplicial_complex_d2(N,p1,p2):
     'Simplicial models of social contagion' Nat. Commun. (2019)  
     https://arxiv.org/pdf/1810.07031
     https://github.com/iaciac/simplagion/blob/master/utils_simplagion_on_RSC.py 
+
+    Note: we allow for the presence of 3-cliques which are not 2-simplices, 
+    i.e. simplicial complexes having both "empty" and "full" triangles.
     -----------------------------------------------------------------------------------
     """
     # """Our model"""

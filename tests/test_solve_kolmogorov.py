@@ -14,7 +14,7 @@ from scipy.integrate import solve_ivp
 
 import sys
 sys.path.append('../src/')
-import Hypergraphs
+import higher_order_structures
 import solve_kolmogorov
 import simulate_gillespie
 
@@ -26,13 +26,13 @@ if __name__ == "__main__":
     #
     print("Example complete case")
     N = 5
-    g = Hypergraphs.CompleteHypergraph(N)
+    g = higher_order_structures.CompleteHypergraph(N)
     print(solve_kolmogorov.list_all_states(g))
     #> [0, 1, 2, 3, 4, 5]
     print()
     
     print("Example general case")
-    g = Hypergraphs.example45()
+    g = higher_order_structures.example45()
     for state_K in solve_kolmogorov.list_all_states(g):
         print(list(state_K), end=", ")
     #> [], [0], [1], [2], [3], [0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3], \
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     #
     print("Test complete case")
     N = 5
-    g = Hypergraphs.CompleteHypergraph(N)
+    g = higher_order_structures.CompleteHypergraph(N)
     all_states = solve_kolmogorov.list_all_states(g)
     s12_cache = {}
     for state_k_ in all_states:
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     print()
 
     print("Test general case")
-    g = Hypergraphs.example45()
+    g = higher_order_structures.example45()
     states_of_size_2 = list(combinations(g.nodes, 2))
     # > [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]
     
@@ -74,11 +74,11 @@ if __name__ == "__main__":
 # TODO: rewrite it as tests
 def test_list_all_states_complete():
     N = 5
-    g = Hypergraphs.CompleteHypergraph(N)
+    g = higher_order_structures.CompleteHypergraph(N)
     assert solve_kolmogorov.list_all_states(g) == [0, 1, 2, 3, 4, 5]
 
 def test_list_all_states_general():
-    g = Hypergraphs.example45()
+    g = higher_order_structures.example45()
     nodes = list(g.nodes)
 
     # chain together combinations of all sizes
@@ -96,7 +96,7 @@ def test_list_all_states_general():
 
 def test_total_pairs_triples_complete():
     N = 5
-    g = Hypergraphs.CompleteHypergraph(N)
+    g = higher_order_structures.CompleteHypergraph(N)
     all_states = solve_kolmogorov.list_all_states(g)
     s12_cache = {}
     for state_k_ in all_states:
@@ -108,7 +108,7 @@ def test_total_pairs_triples_complete():
     assert s12_cache == expected_cache
 
 def test_total_pairs_triples_general():
-    g = Hypergraphs.example45()
+    g = higher_order_structures.example45()
     states_of_size_2 = list(combinations(g.nodes, 2))
     expected_results = {
         (0, 1): (2, 0), (0, 2): (3, 0), (0, 3): (3, 0),

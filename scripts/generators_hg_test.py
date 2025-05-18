@@ -1,5 +1,5 @@
 """
-Hypergraph generators:
+Testing hypergraph generators:
   * Erdos-Renyi like random hypergraph
   * Scale-free hypergraph using configuration model  
   * Regular hypergraph TODO: ensure unique vertices and no repeated triangles
@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import random
 # from scipy.stats import nbinom
-from Hypergraphs import EmptyHypergraph
+from higher_order_structures import EmptyHypergraph
 import os
 
 from scipy.stats import zipf # for power-law Zeta distribution

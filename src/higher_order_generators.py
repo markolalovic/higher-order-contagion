@@ -1,15 +1,15 @@
 #!/usr/bin/env sage -python
 # -*- coding: utf-8 -*-
 
-from Hypergraphs import EmptyHypergraph, CompleteHypergraph
+from higher_order_structures import HigherOrderStructure, Complete, RandomHypergraph
 from utils import draw_hypergraph
 
-def example_hypergraph():
-    r"""Example of a hypergraph on 4 nodes with 5 edges."""
+def example():
+    r"""Example of a higher-order structure."""
     N = 4
-    g = EmptyHypergraph(N)
-    g.name = "Example Hypergraph"
-    edges = [(0, 1), (1, 2), (2, 3), (3, 1), (1, 2, 3)]
+    g = HigherOrderStructure(N)
+    g.name = "Higher Order Example"
+    edges = [(0, 1), (1, 2), (2, 0), (2, 3), (3, 1), (1, 2, 3)]
     g.set_edges(edges)
     g.print()
 
@@ -18,7 +18,7 @@ def example_hypergraph():
     # labels = {0: "a", 1: "b", 2: "c", 3: "d"}
 
     # draw it and save the drawing
-    file_name = "../figures/hypergraphs/example_hypergraph.svg"
+    file_name = "../figures/higher_order_structures/ho_example.svg"
     draw_hypergraph(g, pos=positions, fname=file_name)
     
     # set states of some nodes and print the summary:
@@ -35,9 +35,8 @@ def example_hypergraph():
 
 def cycle_hypergraph(N = 10):
     N = 10
-    g = EmptyHypergraph(N)
+    g = HigherOrderStructure(N)
     g.name = "Cycle Hypergraph"
-
     edges = []
     for i in range(N):
         # 2-node edges form a cycle
@@ -49,16 +48,21 @@ def cycle_hypergraph(N = 10):
         edges.append((i, j, k))
 
     g.set_edges(edges)
-    file_name = "../figures/hypergraphs/cycle_hypergraph.svg"
+    file_name = "../figures/higher_order_structures/ho_cycle_hypergraph.svg"
     draw_hypergraph(g, fname=file_name)
     g.print()
 
 
 if __name__ == "__main__":
-    example_hypergraph()
-    
+    example()
     cycle_hypergraph()
+    
+    # random hypergraph    
+    file_name = "../figures/higher_order_structures/ho_complete.svg"
+    draw_hypergraph(Complete(N = 10), fname=file_name)    
 
-    # complete hypergraph
-    file_name = "../figures/hypergraphs/complete_hypergraph.svg"
-    draw_hypergraph(CompleteHypergraph(5), fname=file_name)
+    # random hypergraph    
+    N = 10
+    g = RandomHypergraph(N = N, p1 = 0.5, p2 = 0.5 / N)
+    file_name = "../figures/higher_order_structures/ho_random_hypergraph.svg"
+    draw_hypergraph(g, fname=file_name)

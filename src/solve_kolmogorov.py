@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from itertools import combinations
 
-from Hypergraphs import CompleteHypergraph
+from higher_order_structures import CompleteHypergraph
 
 import simulate_gillespie
 from scipy.integrate import solve_ivp

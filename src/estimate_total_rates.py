@@ -5,7 +5,7 @@ import matplotlib.pylab as plt
 from scipy.integrate import solve_ivp
 from scipy.special import comb
 
-from Hypergraphs import CompleteHypergraph
+from higher_order_structures import CompleteHypergraph
 from simulate_gillespie import *
 from solve_kolmogorov import *
 import birdepy as bd

@@ -7,8 +7,8 @@ from copy import deepcopy
 rn = np.random.randint(100, size=1)[0]
 rng = np.random.default_rng(rn)
 
-from Hypergraphs import CompleteHypergraph
-from Hypergraphs import RandomHypergraph
+from higher_order_structures import CompleteHypergraph
+from higher_order_structures import RandomHypergraph
 
 import pandas as pd
 import time

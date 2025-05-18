@@ -1,22 +1,24 @@
-""" Hypergraph classes:
-  * Empty -> General
-  * Complete
-  * (Binomial) Random
+"""./src/higher_order_structures.py
+Module for defining and generating higher-oder network structures, 
+including general hypergraphs and classes of simplicial complexes.
+
+HigherOrderStructure: implements all common methods and attributes needed
+for up to 2-simplices or 3-node hyperedges, but can be extendable to higher orders.
 """
 
 from itertools import combinations
 from math import comb
 import random
 
-class EmptyHypergraph:
+class HigherOrderStructure:
     def __init__(self, N):
         r"""
-        Generic superclass for hypergraphs, contains no edges:
-          * Initializes an empty hypergraph
-          * Implements all the required methods for Gillespie simulation
-          * Other hypergraph classes are just hypergraph generators
+        Generic superclass, contains no edges:
+          - Initializes an empty higher order structure
+          - Implements all the required methods for Gillespie simulation
+          - Other classes are just generators
         """
-        self.name = "Empty hypergraph"
+        self.name = "Empty"
         self.N = N
         self.nodes = {i: {'state': 0, 'rate': 0.0} for i in range(N)}
         self.edges = []
@@ -24,7 +26,7 @@ class EmptyHypergraph:
     
     def set_edges(self, edges):
         r"""
-        Precompute and store all pairwise (edge) and 
+        Helper to precompute and store all pairwise (edge) and 
         higher-order (hyperedge) neighbors. 
         """
         self.edges = edges
@@ -39,10 +41,10 @@ class EmptyHypergraph:
                 self.neighbors_memo[1][v].add(u)
             
             elif len(edge) == 3:
-                i, j, k = edge
-                self.neighbors_memo[2][i].add((j, k))
-                self.neighbors_memo[2][j].add((i, k))
-                self.neighbors_memo[2][k].add((i, j))
+                v1, v2, v3 = edge
+                self.neighbors_memo[2][v1].add( tuple( sorted((v2, v3)) ) )
+                self.neighbors_memo[2][v2].add( tuple( sorted((v1, v3)) ) )
+                self.neighbors_memo[2][v3].add( tuple( sorted((v1, v2)) ) )
     
     def neighbors(self, i, order):
         r"""
@@ -62,7 +64,7 @@ class EmptyHypergraph:
     
     def get_edges(self, order=1):
         r"""Returns (order + 1)-node edges in self,
-            e.g., order=1 edges are 2-node edges are pairwise edges. """
+            e.g., order=1 edges are 2-node or pairwise edges. """
         return [edge for edge in self.edges if len(edge) == (order + 1)]
 
     def print(self):
@@ -86,14 +88,14 @@ class EmptyHypergraph:
                 print(f"\t\t{edge}")
         print("\n")
 
-class CompleteHypergraph(EmptyHypergraph):
+class Complete(HigherOrderStructure):
     r"""
-    Complete hypergraph on `N` nodes, in which each edge is present.
-    Overrides most methods of EmptyHypergraph to not store edges explicitly.
+    Complete simplicial complex on `N` nodes, in which every edge is present.
+    Overrides most methods of HigherOrderStructure to not store edges explicitly.
     """
     def __init__(self, N):
         super().__init__(N) # initializes N, nodes
-        self.name = "Complete hypergraph"
+        self.name = "Complete"
         # self.edges and self.neighbors_memo are empty, generates nbs and edges on demand
     
     def neighbors(self, i, order):
@@ -132,9 +134,9 @@ class CompleteHypergraph(EmptyHypergraph):
             print(f"\t\t{edge}")
         print("\n")
 
-class RandomHypergraph(EmptyHypergraph):
+class RandomHypergraph(HigherOrderStructure):
     r"""
-    (Binomial) Random hypergraph on `N` nodes, in which each 2-node edge and 
+    (Binomial) Random hypergraph on `N` nodes, in which every 2-node edge and 
     3-node edge is present independently with probability p1 and p2 respectively.
     """
     def __init__(self, N, p1, p2):
@@ -145,20 +147,17 @@ class RandomHypergraph(EmptyHypergraph):
         self.set_edges(self.generate_random_hypergraph())
     
     def generate_random_hypergraph(self):
-        nodes = list(range(self.N))
-        pw_edges = list(combinations(nodes, 2))
-        ho_edges = list(combinations(nodes, 3))
-        edges = []
-        
+        nodes_list = list(range(self.N))
+        edges_list = []
         # append 2-node (pairwise) edges with probability p1
-        for edge in pw_edges:
+        for pw_edge in list(combinations(nodes_list, 2)):
             if random.random() < self.p1:
-                edges.append(edge)
-        
+                edges_list.append(pw_edge)
         # append 3-node (higher-order) edges with probability p2
-        for hyperedge in ho_edges:
+        for ho_edge in list(combinations(nodes_list, 3)):
             if random.random() < self.p2:
-                edges.append(hyperedge)
-        
-        return edges
+                edges_list.append(ho_edge)
+        return edges_list
+
+
 
