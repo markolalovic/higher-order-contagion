@@ -8,10 +8,74 @@ Simplicial complex generators:
 import numpy as np
 import networkx as nx
 import random
+from itertools import combinations
+
 
 # -----------------------------------------------------------------------------------
 # Erdos-Renyi like random SC
 # -----------------------------------------------------------------------------------
+def generate_my_simplicial_complex_d2(N,p1,p2):
+    r"""
+    -----------------------------------------------------------------------------------
+    Adapted from: Iacopini et al.
+    'Simplicial models of social contagion' Nat. Commun. (2019)  
+    https://arxiv.org/pdf/1810.07031
+    https://github.com/iaciac/simplagion/blob/master/utils_simplagion_on_RSC.py 
+    -----------------------------------------------------------------------------------
+    """
+    # """Our model"""
+    
+    #I first generate a standard ER graph with edges connected with probability p1
+    G = nx.fast_gnp_random_graph(N, p1, seed=None)
+    N_realized = N
+    if not nx.is_connected(G):
+        giant = list(nx.connected_components(G))[0]
+        G = nx.subgraph(G, giant)
+        print('not connected, but GC has order %i ans size %i'%(len(giant), G.size())) 
+        max_component = max(nx.connected_components(G), key=len)
+        max_component = G.subgraph(max_component).copy()        
+        N_realized = max_component.order()
+
+    triangles_list = []
+    G_copy = G.copy()
+    
+    #Now I run over all the possible combinations of three elements:
+    for tri in combinations(list(G.nodes()),3):
+        #And I create the triangle with probability p2
+        if random.random() <= p2:
+            #I close the triangle.
+            triangles_list.append(tri)
+            
+            #Now I also need to add the new links to the graph created by the triangle
+            G_copy.add_edge(tri[0], tri[1])
+            G_copy.add_edge(tri[1], tri[2])
+            G_copy.add_edge(tri[0], tri[2])
+            
+    G = G_copy
+             
+    #Creating a dictionary of neighbors
+    node_neighbors_dict = {}
+    for n in list(G.nodes()):
+        node_neighbors_dict[n] = G[n].keys()           
+                
+    #print len(triangles_list), 'triangles created. Size now is', G.size()
+        
+    #avg_n_triangles = 3.*len(triangles_list)/G.order()
+    
+    #return node_neighbors_dict, node_triangles_dict, avg_n_triangles
+    #return node_neighbors_dict, triangles_list, avg_n_triangles
+
+    edges_list = [tuple(sorted(edge)) for edge in G.edges()]    
+    return N_realized, edges_list, triangles_list
+
+def get_p1_and_p2(k1,k2,N):
+    p2 = (2.*k2)/((N-1.)*(N-2.))
+    p1 = (k1 - 2.*k2)/((N-1.)- 2.*k2)
+    if (p1>=0) and (p2>=0):
+        return p1, p2
+    else:
+        raise ValueError('Negative probability!')
+
 # from Federico:
 def ER_like_simplicial_complex(N,p1,p2):
     """Our model"""
@@ -226,7 +290,7 @@ def create_triangle_bianconi_courtney(i1, i2, i3, tri, kg):
 def scale_free_simplicial_complex_bianconi_courtney(N,m,gamma2,AVOID=1,NX = 15,FIGURE=0):
     r"""
     -----------------------------------------------------------------------------------
-    Adapted from Bianconi, Courtney https://arxiv.org/abs/1602.04110
+    Adapted from: Bianconi, Courtney https://arxiv.org/abs/1602.04110
     -----------------------------------------------------------------------------------
 
     Generate a random simplicial complex with scale-free generalized degree distribution.
