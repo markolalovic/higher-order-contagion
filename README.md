@@ -1,7 +1,9 @@
 # higher-order-contagion
 Code for learning pairwise and higher-order rates of complex contagion on higher-order networks using birth-and-death processes.
 
-Higher-order networks can be represented by various structures including simplicial complexes and general hypergraphs. Here, we focus on simplicial complexes where the highest dimension of interaction is two. Nevertheless, the framework is conceptually extendable to higher dimensions and to general hypergraphs.
+Higher-order networks can be represented by various structures including simplicial complexes and general hypergraphs. Here, we focus on simplicial complexes where the highest dimension of interaction is two. 
+
+Nevertheless, the framework is extendable to higher dimensions and to general hypergraphs.
 
 ## Examples
 TODO: add examples of 3 main classes of simplicial complexes, more heterogeneous E-R SC, regular, and generalized scale-free, maybe the star graph too.
