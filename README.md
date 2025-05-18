@@ -45,6 +45,29 @@ draw_hypergraph(g, fname=file_name)
 ```
 <img src="figures/higher_order_structures/ho_cycle_hypergraph.svg" alt="Cycle Hypergraph" width="450" height="450">
 
+### Erdos-Renyi like simplicial complex
+```python
+# parameters for a small example
+N_example = 24
+d1_target_example = 6.0
+d2_target_example = 2.0
+g_sc = ErdosRenyiSC(N_example, d1_target_example, d2_target_example)
+g_sc.summary()
+# Target d1: 6.00, Realized d1: 6.50
+# Target d2: 2.00, Realized d2: 1.88
+
+# Initial p1 used for G(N, p1): 0.1053
+# Expected p1 used for pw edges: 0.24860945
+# Expected p2 used for ho edges: 0.00790514
+
+# Realized p1_overall: 0.2826
+# Realized p2: 0.00741107
+
+# Realized pw edges:  78/276
+# Realized ho edges:  15/2024
+```
+<img src="figures/higher_order_structures/ho_erdos_renyi_sc.svg" alt="Erdos-Renyi SC" width="450" height="450">
+
 ## Installation
 ```bash
 # Clone repository
