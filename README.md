@@ -12,13 +12,11 @@ Example of a higher-order network on 4 nodes with 6 edges: five 2-node edges and
 from higher_order_structures import HigherOrderStructure
 from utils import draw_hypergraph
 
-# create a hypergraph on 4 nodes with 5 edges
 g = HigherOrderStructure(4)
 g.name = "Higher Order Example"
 edges = [(0, 1), (1, 2), (2, 0), (2, 3), (3, 1), (1, 2, 3)]
 g.set_edges(edges)
 
-# set node positions and draw it
 positions = {0: (0, 1), 1: (0, 0), 2: (1, 1), 3: (1, 0)}
 file_name = "../figures/higher_order_structures/ho_example.svg"
 draw_hypergraph(g, pos=positions, fname=file_name)
