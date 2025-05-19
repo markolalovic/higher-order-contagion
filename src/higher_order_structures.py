@@ -10,7 +10,7 @@ from itertools import combinations
 import numpy as np
 from math import comb
 import random
-from higher_order_generators import generate_er_sc_components, get_p1_p2_for_target_degrees
+from higher_order_generators import generate_er_sc_components, get_p1_p2_for_target_degrees_precise
 
 class HigherOrderStructure:
     def __init__(self, N):
@@ -180,7 +180,7 @@ class ErdosRenyiSC(HigherOrderStructure):
             * d1 should be high enough that p1_initial > np.log(N) / N 
             * so that G(n, p1_initial) is connected almost surely
         """
-        self.p1_initial, self.p2_triangles = get_p1_p2_for_target_degrees(d1, d2, N)
+        self.p1_initial, self.p2_triangles = get_p1_p2_for_target_degrees_precise(d1, d2, N)
 
         # generate the SC components
         for _ in range(attempts): # max attempts to get a connected G(n, p_init) graph of target size
@@ -232,6 +232,11 @@ class ErdosRenyiSC(HigherOrderStructure):
         self.calculate_expected_p1_overall()
         self.p1_edges = self.calculate_expected_p1_overall()
 
+        # using precise p1_initial, p2_triangles, the properties simplify
+        # TODO: check that means of realized p1, p2 equal targets p1, p2
+        self.target_p1 = self.d1_target / (self.N - 1.0)
+        self.target_p2 = (2.0 * self.d2_target) / ((self.N - 1.0) * (self.N - 2.0))
+
     def calculate_expected_p1_overall(self):
         r"""
         Calculates expected overall probability of a pairwise edge existing in ErdosRenyiSC.
@@ -260,20 +265,25 @@ class ErdosRenyiSC(HigherOrderStructure):
 
     def summary(self):
         # super().summary()
+        print("--------------------------------------")
         print(f"\tTarget d1: {self.d1_target:.2f}, Realized d1: {self.d1_realized:.2f}")
         print(f"\tTarget d2: {self.d2_target:.2f}, Realized d2: {self.d2_realized:.2f}\n")
         
-        print(f"\tInitial p1 used for G(N, p1): {self.p1_initial:.4f}")
-        print(f"\tExpected p1 used for pw edges: {self.p1_edges:.8f}")
-        print(f"\tExpected p2 used for ho edges: {self.p2_triangles:.8f}\n")
+        print(f"\tInitial p_G used for G(N, p_G): {self.p1_initial:.8f}\n")
 
-        print(f"\tRealized p1_overall: {self.p1_realized:.4f}")
+        print(f"\tExpected p1: {self.p1_edges:.8f}") # calculated
+        print(f"\tExpected p2: {self.p2_triangles:.8f}\n")
+
+        print(f"\tTarget p1:  {self.target_p1:.8f}") # using precise p1_init, p1_triangles
+        print(f"\tTarget p2:  {self.target_p2:.8f}\n")
+
+        print("--------------------------------------")
+        print(f"\tRealized p1: {self.p1_realized:.8f}")
         print(f"\tRealized p2: {self.p2_realized:.8f}\n")
 
-        print(f"\tRealized pw edges:  {self.realized_pw_edges}/{self.max_pw_edges}")
-        print(f"\tRealized ho edges:  {self.realized_ho_edges}/{self.max_ho_edges}\n")
+        print(f"\tRealized number of pw edges:  {self.realized_pw_edges}/{self.max_pw_edges}")
+        print(f"\tRealized number of ho edges:  {self.realized_ho_edges}/{self.max_ho_edges}\n")
 
-        # print(f"\tIs valid SC: {self.is_sc_valid()}") # TODO: comment out to speed-up
-        print(f"")
+        # print(f"\tIs valid SC: {self.is_sc_valid()}") # TODO: checked and commented out to speed-up
         print("\n")
 

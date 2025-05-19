@@ -69,6 +69,6 @@ def plot_degree_distribution_ErdosRenyiSC(g):
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.93])
 
-    plt.savefig(f"../figures/higher_order_structures/degree_distributions_ER_SC_ver3.pdf", 
+    plt.savefig(f"../figures/higher_order_structures/degree_distributions_ER_SC.pdf", 
                 format='pdf', bbox_inches='tight')
     plt.show()
