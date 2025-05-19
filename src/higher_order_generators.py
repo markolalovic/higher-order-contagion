@@ -19,15 +19,15 @@ from itertools import combinations
 # -----------------------------------------------------------------------------------
 def generate_er_sc_components(N_target, p1_initial, p2_triangles):
     r"""
-    Adapted from: Iacopini et al.
-    'Simplicial models of social contagion' Nat. Commun. (2019)  
-    https://arxiv.org/pdf/1810.07031
-    https://github.com/iaciac/simplagion/blob/master/utils_simplagion_on_RSC.py
+    Adapted from: 
+      - Iacopini et al., 'Simplicial models of social contagion', Nat. Commun., 2019
+      - https://arxiv.org/pdf/1810.07031
+      - https://github.com/iaciac/simplagion/blob/master/utils_simplagion_on_RSC.py
 
-    Note: we allow for the presence of 3-cliques which are not 2-simplices, 
+    NOTE: we allow for the presence of 3-cliques which are not 2-simplices, 
     i.e. simplicial complexes having both "empty" and "full" triangles.
 
-    Generates Erdos-Renyi like simplicial complex:
+    Algorithm to generates Erdos-Renyi like simplicial complex:
       - First, creates G(N, p1_initial) random graph
       - Then goes over all possible triples and adds them as 2-simplices (triangles)
        with probability p2_triangles
@@ -96,12 +96,13 @@ def get_p1_p2_for_target_degrees(d1, d2, N):
       * Number of possible triangles: N choose 3
       * So, p2 = (N * d2 / 3) / (N choose 3) = (2 * d2) / (N - 1)(N - 2)
 
-    - Derivation of p1:
+    - Derivation of p1: 
       * p1 = Pr(of an edge in the initial G(N, p1) graph)
       * We need to set p1 such that after triangles are added, the total average degree is d1
       * Each of d2 triangles a node is part of, contributes 2 new edges to its degree, on average
       * Maximum possible degree: N - 1
-      * So, subtracting "triangle degrees": p1 = (d1 - 2 * d2) / ((N - 1) - 2 * d2)
+      * So, "subtracting triangle degrees": p1 = (d1 - 2 * d2) / ((N - 1) - 2 * d2)
+      TODO: this is just an approximation
     """
     p2 = (2. * d2) / ((N - 1.) * (N - 2.))
     p1 = (d1 - 2. * d2) / ((N - 1.) - 2. * d2)
@@ -110,3 +111,22 @@ def get_p1_p2_for_target_degrees(d1, d2, N):
     else:
         raise ValueError('Negative probability!')
 
+def get_p1_p2_for_target_degrees_precise(d1, d2, N):
+    r"""
+    Calculates p_G for initial G ~ G(N, p_G) and p_delta (prob of adding 2-simplices)
+    to achieve target average degrees: d1 and d2 more precisely
+    """
+    p_delta = (2.0 * d2) / ((N - 1.0) * (N - 2.0)) # this is the same
+    p_delta = np.clip(p_delta, 0.0, 1.0) # clip p_delta s.t. it's valid probability
+
+    target_p1 = d1 / (N - 1.0)
+    target_p1 = np.clip(target_p1, 0.0, 1.0) # clip p_1 s.t. it's valid probability
+    
+    # if prob_induced_by_triangles is high, then p_G can be 0
+    prob_induced_by_triangles = 1.0 - (1.0 - p_delta)**(N - 2.0)
+
+    denominator_pG = (1.0 - p_delta)**(N - 2.0) # TODO: this shouldn't be close to 0
+    numerator_pG = target_p1 - prob_induced_by_triangles
+    p_G = numerator_pG / denominator_pG
+    p_G = np.clip(p_G, 0.0, 1.0)
+    return p_G, p_delta

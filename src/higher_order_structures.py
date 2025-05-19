@@ -233,15 +233,15 @@ class ErdosRenyiSC(HigherOrderStructure):
         self.p1_edges = self.calculate_expected_p1_overall()
 
     def calculate_expected_p1_overall(self):
-            r"""
-            Calculates expected overall probability of a pairwise edge existing in ErdosRenyiSC.
-            """
-            # prob that (u, v) is not formed by any of the N - 2 triangles involving u,v
-            prob_no_triangle_forms_uv = (1.0 - self.p2_triangles)**(self.N - 2)
-            # prob that (u, v) is formed by at least one triangle
-            prob_triangle_forms_uv = 1.0 - prob_no_triangle_forms_uv
-            expected_p1 = self.p1_initial + (1.0 - self.p1_initial) * prob_triangle_forms_uv
-            return expected_p1
+        r"""
+        Calculates expected overall probability of a pairwise edge existing in ErdosRenyiSC.
+        """
+        # prob that (u, v) is not formed by any of the N - 2 triangles involving u,v
+        prob_no_triangle_forms_uv = (1.0 - self.p2_triangles)**(self.N - 2)
+        # prob that (u, v) is formed by at least one triangle
+        prob_triangle_forms_uv = 1.0 - prob_no_triangle_forms_uv
+        expected_p1 = self.p1_initial + (1.0 - self.p1_initial) * prob_triangle_forms_uv
+        return expected_p1
     
     def is_sc_valid(self):
         r""" Checks for downward closure property for all 2-simplices. """
@@ -276,7 +276,4 @@ class ErdosRenyiSC(HigherOrderStructure):
         # print(f"\tIs valid SC: {self.is_sc_valid()}") # TODO: comment out to speed-up
         print(f"")
         print("\n")
-
-
-
 
