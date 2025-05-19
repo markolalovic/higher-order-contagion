@@ -75,6 +75,42 @@ def generate_er_sc_components(N_target, p1_initial, p2_triangles):
                 edges_set.add(tuple(sorted((sorted_triple[1], sorted_triple[2]))))
     return N_realized, list(edges_set), list(triangles_set)
 
+def get_p1_p2_for_target_degrees_precise(d1, d2, N):
+    r"""
+    Calculates p_G for initial G ~ G(N, p_G) and p_delta (prob of adding 2-simplices)
+    to achieve target average degrees: d1 and d2 more precisely.
+
+    NOTE: 
+      * `denominator_pG` being close to 0 means that $p_{\Delta}$ is close to 1 
+      * That is all possible triangles are formed
+      * If also `target_p1` is close to 1, That is when `d_1` is close to `N - 1` 
+      * Then `p_G -> 0/0`
+      * In this case `p_G` can be anything as all edges are formed by triangles anyway
+    """
+    p_delta = (2.0 * d2) / ((N - 1.0) * (N - 2.0)) # this is the same
+    p_delta = np.clip(p_delta, 0.0, 1.0) # clip p_delta s.t. it's valid probability
+
+    target_p1 = d1 / (N - 1.0)
+    target_p1 = np.clip(target_p1, 0.0, 1.0) # clip p_1 s.t. it's valid probability
+    
+    # if prob_induced_by_triangles is high, then p_G can be 0
+    prob_induced_by_triangles = 1.0 - (1.0 - p_delta)**(N - 2.0)
+
+    denominator_pG = (1.0 - p_delta)**(N - 2.0) # TODO: this shouldn't be close to 0
+    numerator_pG = target_p1 - prob_induced_by_triangles
+    p_G = numerator_pG / denominator_pG
+    p_G = np.clip(p_G, 0.0, 1.0)
+    return p_G, p_delta
+
+
+
+
+
+
+
+
+
+''' approximation
 def get_p1_p2_for_target_degrees(d1, d2, N):
     r"""
     Returns estimates: 
@@ -110,31 +146,4 @@ def get_p1_p2_for_target_degrees(d1, d2, N):
         return p1, p2
     else:
         raise ValueError('Negative probability!')
-
-def get_p1_p2_for_target_degrees_precise(d1, d2, N):
-    r"""
-    Calculates p_G for initial G ~ G(N, p_G) and p_delta (prob of adding 2-simplices)
-    to achieve target average degrees: d1 and d2 more precisely.
-
-    NOTE: 
-      * `denominator_pG` being close to 0 means that $p_{\Delta}$ is close to 1 
-      * That is all possible triangles are formed
-      * If also `target_p1` is close to 1, That is when `d_1` is close to `N - 1` 
-      * Then `p_G -> 0/0`
-      * In this case `p_G` can be anything as all edges are formed by triangles anyway
-    """
-    p_delta = (2.0 * d2) / ((N - 1.0) * (N - 2.0)) # this is the same
-    p_delta = np.clip(p_delta, 0.0, 1.0) # clip p_delta s.t. it's valid probability
-
-    target_p1 = d1 / (N - 1.0)
-    target_p1 = np.clip(target_p1, 0.0, 1.0) # clip p_1 s.t. it's valid probability
-    
-    # if prob_induced_by_triangles is high, then p_G can be 0
-    prob_induced_by_triangles = 1.0 - (1.0 - p_delta)**(N - 2.0)
-
-    denominator_pG = (1.0 - p_delta)**(N - 2.0) # TODO: this shouldn't be close to 0
-    numerator_pG = target_p1 - prob_induced_by_triangles
-    p_G = numerator_pG / denominator_pG
-    p_G = np.clip(p_G, 0.0, 1.0)
-    return p_G, p_delta
-
+'''

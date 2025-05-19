@@ -8,7 +8,7 @@ src_path = os.path.join(project_root, 'src')
 sys.path.insert(0, src_path)
 
 from higher_order_structures import ErdosRenyiSC
-from plot_utils import plot_degree_distribution_ErdosRenyiSC
+from utils import plot_degree_distribution_ErdosRenyiSC
 
 def run_er_sc_realization_test(N, d1, d2, nruns=100):
     r""" 

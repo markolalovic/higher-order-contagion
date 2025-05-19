@@ -51,19 +51,3 @@ def draw_hypergraph(g, pos=None, fname=None,
     
     return plot_obj
 
-def save_hypergraph(g, file_path):
-    r"""
-    Saves a hypergraph object to a file using pickle, 
-    e.g. to: `../data/random_graph.pkl`
-    """
-    with open(file_path, "wb") as f:
-        pickle.dump(g, f)
-
-def load_hypergraph(file_path):
-    r"""
-    Loads a hypergraph object to a file using pickle,
-    e.g. to: `../data/random_graph.pkl`
-    """
-    with open(file_path, "rb") as f:
-        g = pickle.load(f)
-    return g

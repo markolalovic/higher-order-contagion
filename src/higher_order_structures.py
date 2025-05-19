@@ -265,25 +265,17 @@ class ErdosRenyiSC(HigherOrderStructure):
 
     def summary(self):
         # super().summary()
-        print("--------------------------------------")
         print(f"\tTarget d1: {self.d1_target:.2f}, Realized d1: {self.d1_realized:.2f}")
         print(f"\tTarget d2: {self.d2_target:.2f}, Realized d2: {self.d2_realized:.2f}\n")
-        
+
+        print(f"\tTarget p1:  {self.target_p1:.8f}, Realized p1: {self.p1_realized:.8f}")
+        print(f"\tTarget p2:  {self.target_p2:.8f}, Realized p2: {self.p2_realized:.8f}\n")
+
         print(f"\tInitial p_G used for G(N, p_G): {self.p1_initial:.8f}\n")
-
-        print(f"\tExpected p1: {self.p1_edges:.8f}") # calculated
-        print(f"\tExpected p2: {self.p2_triangles:.8f}\n")
-
-        print(f"\tTarget p1:  {self.target_p1:.8f}") # using precise p1_init, p1_triangles
-        print(f"\tTarget p2:  {self.target_p2:.8f}\n")
-
-        print("--------------------------------------")
-        print(f"\tRealized p1: {self.p1_realized:.8f}")
-        print(f"\tRealized p2: {self.p2_realized:.8f}\n")
 
         print(f"\tRealized number of pw edges:  {self.realized_pw_edges}/{self.max_pw_edges}")
         print(f"\tRealized number of ho edges:  {self.realized_ho_edges}/{self.max_ho_edges}\n")
 
-        # print(f"\tIs valid SC: {self.is_sc_valid()}") # TODO: checked and commented out to speed-up
+        print(f"\tIs valid SC: {self.is_sc_valid()}") # TODO: checked and commented out to speed-up
         print("\n")
 

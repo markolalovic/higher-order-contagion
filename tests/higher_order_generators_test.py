@@ -1,10 +1,19 @@
 #!/usr/bin/env sage -python
 # -*- coding: utf-8 -*-
 
+import numpy as np
+import sys
+import os
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+src_path = os.path.join(project_root, 'src')
+sys.path.insert(0, src_path)
+
 from higher_order_structures import HigherOrderStructure, Complete, RandomHypergraph
 from higher_order_structures import ErdosRenyiSC
 
-from draw_utils import draw_hypergraph
+from utils_sage import draw_hypergraph
 
 def example():
     r"""Example of a higher-order structure."""
@@ -56,7 +65,7 @@ def cycle_hypergraph(N = 10):
 
 
 if __name__ == "__main__":
-    # example()
+    example()
     # cycle_hypergraph()
     
     # # random hypergraph    
@@ -70,11 +79,11 @@ if __name__ == "__main__":
     # draw_hypergraph(g, fname=file_name)
 
     # --- Erdos-Renyi-SC --- 
-    N = 1000
-    d1, d2 = (20, 6)
-    g = ErdosRenyiSC(N, d1, d2)
-    g.print()
-    g.summary()
+    # N = 1000
+    # d1, d2 = (20, 6)
+    # g = ErdosRenyiSC(N, d1, d2)
+    # g.print()
+    # g.summary()
     # Erdos-Renyi-SC on 1000 nodes with 12123 edges.
 
     # Target d1: 20.00, Realized d1: 20.21

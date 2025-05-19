@@ -1,4 +1,3 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import Counter # for counting degrees
@@ -72,3 +71,20 @@ def plot_degree_distribution_ErdosRenyiSC(g):
     plt.savefig(f"../figures/higher_order_structures/degree_distributions_ER_SC.pdf", 
                 format='pdf', bbox_inches='tight')
     plt.show()
+
+def save_hypergraph(g, file_path):
+    r"""
+    Saves a hypergraph object to a file using pickle, 
+    e.g. to: `../data/random_graph.pkl`
+    """
+    with open(file_path, "wb") as f:
+        pickle.dump(g, f)
+
+def load_hypergraph(file_path):
+    r"""
+    Loads a hypergraph object to a file using pickle,
+    e.g. to: `../data/random_graph.pkl`
+    """
+    with open(file_path, "rb") as f:
+        g = pickle.load(f)
+    return g

@@ -1,7 +1,7 @@
 """
 Testing hypergraph generators:
-  * Erdos-Renyi like random hypergraph
   * Scale-free hypergraph using configuration model  
+  * Erdos-Renyi like random hypergraph
   * Regular hypergraph TODO: ensure unique vertices and no repeated triangles
 
 Commented out:
@@ -19,6 +19,147 @@ import os
 from scipy.stats import zipf # for power-law Zeta distribution
 # from itertools import combinations
 from scipy.special import comb
+
+
+def scale_free_hypergraph(N, gamma_pw, k_min_pw, gamma_ho, k_min_ho, attempts=1000):
+    r"""
+    Generates a hypergraph with degree sequence from a power-law distribution:
+
+      P(k) \propto k^-gamma
+
+    Using:
+      * scipy.stats.zipf which gives P(k) proportional to k**(-gamma) for k = 1, 2, 3 ...
+      * and clip degrees between k_min and k_max
+    
+    Example setup:
+        * N = 2000        # number of nodes
+
+        * gamma_pw = 2.5  # exponent for scale-free networks
+        * k_min_pw = 2    # minimum pairwise degree
+
+        * gamma_ho = 2.5  # can be different for HO interactions
+        * k_min_ho = 1    # minimum number of triangles a node is in
+    """
+    all_edges = []
+    k_max_pw = N - 1 # maximum PW degree
+    k_max_ho = comb(N - 1, 2, exact=True) # maximum HO degree
+
+    # generate PW edges
+    for _ in range(attempts):        
+        degrees_pw = zipf.rvs(gamma_pw, size=N)
+        degrees_pw = np.clip(degrees_pw, k_min_pw, k_max_pw)
+        if np.sum(degrees_pw) % 2 == 0:
+            break
+    edges_pw_list = configuration_model_edges(degrees_pw)
+    all_edges.extend(edges_pw_list)
+
+    # generate HO edges
+    for _ in range(attempts):
+        # degrees_ho = target number of triangles for each node
+        degrees_ho = zipf.rvs(gamma_ho, size=N)
+        degrees_ho = np.clip(degrees_ho, k_min_ho, k_max_ho)
+        # TODO: convert this to stubs for the configuration model
+        # NOTE: each node contributes 2 stubs for every triangle it is in
+        # degrees_ho = degrees_ho * 2
+        # NOTE: each triangle consumes 3 * 2 = 6 stubs in total
+        if np.sum(degrees_ho) % 3 == 0:
+            break
+    triangles_ho_list = configuration_model_triangles(degrees_ho)
+    all_edges.extend(triangles_ho_list)
+
+    return all_edges, degrees_pw, degrees_ho
+
+def test_scale_free_hypergraph():
+    # example setup
+    N = 2000        # number of nodes
+
+    gamma_pw = 2.5  # exponent for scale-free networks
+    k_min_pw = 2    # minimum pairwise degree
+
+    gamma_ho = 2.5  # can be different for HO interactions
+    k_min_ho = 2    # minimum number of triangles a node is in
+
+    all_edges, degrees_pw, degrees_ho = scale_free_hypergraph(
+            N, gamma_pw, k_min_pw, gamma_ho, k_min_ho)
+
+    g = EmptyHypergraph(N)
+    g.name = "ScaleFree"
+    g.set_edges(all_edges)
+    g.print()
+    
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+    
+    # --------------------------------------------
+    # PW degrees
+    # --------------------------------------------
+    # generated sequence of degrees
+    counts_pw, bins_pw = np.histogram(degrees_pw, bins=np.logspace(np.log10(max(1, k_min_pw)), np.log10(np.max(degrees_pw) + 1), 30), density=True)
+    bin_centers_pw = (bins_pw[:-1] + bins_pw[1:]) / 2
+    axes[0].loglog(bin_centers_pw, counts_pw, 'o', color='blue', 
+                   alpha=0.7, label='Sequence PW Degrees')
+    # simulated degrees
+    sim_degrees_pw = np.zeros(N, dtype=int)
+    for node_idx in range(N):
+        sim_degrees_pw[node_idx] = len(g.neighbors(node_idx, 1)) # NOTE: order = 1
+    
+    counts_pw, bins_pw = np.histogram(sim_degrees_pw, bins=np.logspace(np.log10(max(1, k_min_pw)), np.log10(np.max(sim_degrees_pw) + 1), 30), density=True)
+    bin_centers_pw = (bins_pw[:-1] + bins_pw[1:]) / 2
+    axes[0].loglog(bin_centers_pw, counts_pw, 'x', color='red', 
+                   alpha=1, label='Simulated PW Degrees')
+    # theoretical line
+    k_plot = np.logspace(np.log10(k_min_pw), np.log10(np.max(degrees_pw)), 50)
+    axes[0].loglog(k_plot, (k_plot**(-gamma_pw)) / (np.sum(k_plot**(-gamma_pw))),
+                   'k', alpha=0.5, label=f'P(k) ~ k^{-gamma_pw}')
+    
+    axes[0].set_title(f'PW Degrees, Avg = {np.mean(degrees_pw):.2f}, Max = {np.max(degrees_pw):.0f}')
+    axes[0].set_xlabel('Pairwise Degree k_pw')
+    axes[0].set_ylabel('P(k_pw)')
+    axes[0].legend()
+    axes[0].grid(True, which="both", ls=":", alpha=0.7) # grid for loglog
+
+    # --------------------------------------------
+    # HO degrees
+    # --------------------------------------------
+    # generated sequence of degrees
+    counts_ho, bins_ho = np.histogram(degrees_ho, bins=np.logspace(np.log10(max(1, k_min_ho)), np.log10(np.max(degrees_ho) + 1), 30), density=True)
+    bin_centers_ho = (bins_ho[:-1] + bins_ho[1:]) / 2
+    axes[1].loglog(bin_centers_ho, counts_ho, 'o', color='blue', 
+                   alpha=0.7, label='Sequence HO Degrees')
+    
+    # simulated degrees
+    # HO degrees: number of 3-node edges (triangles) a node is part of
+    sim_degrees_ho = np.zeros(N, dtype=int)
+    for node_idx in range(N):
+        sim_degrees_ho[node_idx] = len(g.neighbors(node_idx, 2))
+    
+    counts_ho, bins_ho = np.histogram(sim_degrees_ho, bins=np.logspace(np.log10(max(1, k_min_ho)), np.log10(np.max(sim_degrees_ho) + 1), 30), density=True)
+    bin_centers_ho = (bins_ho[:-1] + bins_ho[1:]) / 2
+    axes[1].loglog(bin_centers_ho, counts_ho, 'x', color='red', 
+                   alpha=1, label='Simulated HO Degrees')
+    # theoretical line
+    k_plot = np.logspace(np.log10(k_min_ho), np.log10(np.max(degrees_ho)), 50)
+    axes[1].loglog(k_plot, (k_plot**(-gamma_ho)) / (np.sum(k_plot**(-gamma_ho))), 
+                   'k', alpha=0.5, label=f'P(k) ~ k^{-gamma_ho}')
+    
+    axes[1].set_title(f'HO Degrees, Avg = {np.mean(degrees_ho):.2f}, Max = {np.max(degrees_ho):.0f}')
+    axes[1].set_xlabel('HO Degree k_ho')
+    axes[1].set_ylabel('P(k_ho)')
+    axes[1].legend()
+    axes[1].grid(True, which="both", ls=":", alpha=0.7) # grid for loglog
+
+    title = f"Degree Distributions {g.name} with N = {N}, "
+    title += f" gamma_pw = {gamma_pw}, k_min_pw = {k_min_pw}, "
+    title += f" gamma_ho = {gamma_ho}, k_min_ho = {k_min_ho} "
+    fig.suptitle(title, fontsize=16)
+    
+    name = f"scale_free_hypergraph_degree_distributions"
+    save_dir = "../figures/hypergraphs/"
+    save_path = os.path.join(save_dir, f"{name}.pdf")
+    fig.savefig(save_path, format="pdf", bbox_inches="tight")
+    print(f"Figure saved to: {save_path}")
+
+    plt.show()
+
 
 # from Federico:
 def ER_like_random_hypergraph(N,p1,p2):
@@ -192,144 +333,8 @@ def configuration_model_triangles(degrees):
     
     return np.array(triangles)
 
-def scale_free_hypergraph(N, gamma_pw, k_min_pw, gamma_ho, k_min_ho, attempts=1000):
-    r"""
-    Generates a hypergraph with degree sequence from a power-law distribution:
 
-      P(k) \propto k^-gamma
 
-    Using:
-      * scipy.stats.zipf which gives P(k) proportional to k**(-gamma) for k = 1, 2, 3 ...
-      * and clip degrees between k_min and k_max
-    
-    Example setup:
-        * N = 2000        # number of nodes
-
-        * gamma_pw = 2.5  # exponent for scale-free networks
-        * k_min_pw = 2    # minimum pairwise degree
-
-        * gamma_ho = 2.5  # can be different for HO interactions
-        * k_min_ho = 1    # minimum number of triangles a node is in
-    """
-    all_edges = []
-    k_max_pw = N - 1 # maximum PW degree
-    k_max_ho = comb(N - 1, 2, exact=True) # maximum HO degree
-
-    # generate PW edges
-    for _ in range(attempts):        
-        degrees_pw = zipf.rvs(gamma_pw, size=N)
-        degrees_pw = np.clip(degrees_pw, k_min_pw, k_max_pw)
-        if np.sum(degrees_pw) % 2 == 0:
-            break
-    edges_pw_list = configuration_model_edges(degrees_pw)
-    all_edges.extend(edges_pw_list)
-
-    # generate HO edges
-    for _ in range(attempts):
-        # degrees_ho = target number of triangles for each node
-        degrees_ho = zipf.rvs(gamma_ho, size=N)
-        degrees_ho = np.clip(degrees_ho, k_min_ho, k_max_ho)
-        # TODO: convert this to stubs for the configuration model
-        # NOTE: each node contributes 2 stubs for every triangle it is in
-        # degrees_ho = degrees_ho * 2
-        # NOTE: each triangle consumes 3 * 2 = 6 stubs in total
-        if np.sum(degrees_ho) % 3 == 0:
-            break
-    triangles_ho_list = configuration_model_triangles(degrees_ho)
-    all_edges.extend(triangles_ho_list)
-
-    return all_edges, degrees_pw, degrees_ho
-
-def test_scale_free_hypergraph():
-    # example setup
-    N = 2000        # number of nodes
-
-    gamma_pw = 2.5  # exponent for scale-free networks
-    k_min_pw = 2    # minimum pairwise degree
-
-    gamma_ho = 2.5  # can be different for HO interactions
-    k_min_ho = 2    # minimum number of triangles a node is in
-
-    all_edges, degrees_pw, degrees_ho = scale_free_hypergraph(
-            N, gamma_pw, k_min_pw, gamma_ho, k_min_ho)
-
-    g = EmptyHypergraph(N)
-    g.name = "ScaleFree"
-    g.set_edges(all_edges)
-    g.print()
-    
-    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
-    
-    # --------------------------------------------
-    # PW degrees
-    # --------------------------------------------
-    # generated sequence of degrees
-    counts_pw, bins_pw = np.histogram(degrees_pw, bins=np.logspace(np.log10(max(1, k_min_pw)), np.log10(np.max(degrees_pw) + 1), 30), density=True)
-    bin_centers_pw = (bins_pw[:-1] + bins_pw[1:]) / 2
-    axes[0].loglog(bin_centers_pw, counts_pw, 'o', color='blue', 
-                   alpha=0.7, label='Sequence PW Degrees')
-    # simulated degrees
-    sim_degrees_pw = np.zeros(N, dtype=int)
-    for node_idx in range(N):
-        sim_degrees_pw[node_idx] = len(g.neighbors(node_idx, 1)) # NOTE: order = 1
-    
-    counts_pw, bins_pw = np.histogram(sim_degrees_pw, bins=np.logspace(np.log10(max(1, k_min_pw)), np.log10(np.max(sim_degrees_pw) + 1), 30), density=True)
-    bin_centers_pw = (bins_pw[:-1] + bins_pw[1:]) / 2
-    axes[0].loglog(bin_centers_pw, counts_pw, 'x', color='red', 
-                   alpha=1, label='Simulated PW Degrees')
-    # theoretical line
-    k_plot = np.logspace(np.log10(k_min_pw), np.log10(np.max(degrees_pw)), 50)
-    axes[0].loglog(k_plot, (k_plot**(-gamma_pw)) / (np.sum(k_plot**(-gamma_pw))),
-                   'k', alpha=0.5, label=f'P(k) ~ k^{-gamma_pw}')
-    
-    axes[0].set_title(f'PW Degrees, Avg = {np.mean(degrees_pw):.2f}, Max = {np.max(degrees_pw):.0f}')
-    axes[0].set_xlabel('Pairwise Degree k_pw')
-    axes[0].set_ylabel('P(k_pw)')
-    axes[0].legend()
-    axes[0].grid(True, which="both", ls=":", alpha=0.7) # grid for loglog
-
-    # --------------------------------------------
-    # HO degrees
-    # --------------------------------------------
-    # generated sequence of degrees
-    counts_ho, bins_ho = np.histogram(degrees_ho, bins=np.logspace(np.log10(max(1, k_min_ho)), np.log10(np.max(degrees_ho) + 1), 30), density=True)
-    bin_centers_ho = (bins_ho[:-1] + bins_ho[1:]) / 2
-    axes[1].loglog(bin_centers_ho, counts_ho, 'o', color='blue', 
-                   alpha=0.7, label='Sequence HO Degrees')
-    
-    # simulated degrees
-    # HO degrees: number of 3-node edges (triangles) a node is part of
-    sim_degrees_ho = np.zeros(N, dtype=int)
-    for node_idx in range(N):
-        sim_degrees_ho[node_idx] = len(g.neighbors(node_idx, 2))
-    
-    counts_ho, bins_ho = np.histogram(sim_degrees_ho, bins=np.logspace(np.log10(max(1, k_min_ho)), np.log10(np.max(sim_degrees_ho) + 1), 30), density=True)
-    bin_centers_ho = (bins_ho[:-1] + bins_ho[1:]) / 2
-    axes[1].loglog(bin_centers_ho, counts_ho, 'x', color='red', 
-                   alpha=1, label='Simulated HO Degrees')
-    # theoretical line
-    k_plot = np.logspace(np.log10(k_min_ho), np.log10(np.max(degrees_ho)), 50)
-    axes[1].loglog(k_plot, (k_plot**(-gamma_ho)) / (np.sum(k_plot**(-gamma_ho))), 
-                   'k', alpha=0.5, label=f'P(k) ~ k^{-gamma_ho}')
-    
-    axes[1].set_title(f'HO Degrees, Avg = {np.mean(degrees_ho):.2f}, Max = {np.max(degrees_ho):.0f}')
-    axes[1].set_xlabel('HO Degree k_ho')
-    axes[1].set_ylabel('P(k_ho)')
-    axes[1].legend()
-    axes[1].grid(True, which="both", ls=":", alpha=0.7) # grid for loglog
-
-    title = f"Degree Distributions {g.name} with N = {N}, "
-    title += f" gamma_pw = {gamma_pw}, k_min_pw = {k_min_pw}, "
-    title += f" gamma_ho = {gamma_ho}, k_min_ho = {k_min_ho} "
-    fig.suptitle(title, fontsize=16)
-    
-    name = f"scale_free_hypergraph_degree_distributions"
-    save_dir = "../figures/hypergraphs/"
-    save_path = os.path.join(save_dir, f"{name}.pdf")
-    fig.savefig(save_path, format="pdf", bbox_inches="tight")
-    print(f"Figure saved to: {save_path}")
-
-    plt.show()
 
 
 # from Federico:
