@@ -22,29 +22,6 @@ draw_hypergraph(g, pos=positions, fname=file_name)
 ```
 <img src="figures/higher_order_structures/ho_example.svg" alt="Higher Order Example" width="400" height="400">
 
-### Erdos-Renyi like simplicial complex
-```python
-# parameters for a small example
-N_example = 24
-d1_target_example = 6.0
-d2_target_example = 2.0
-g_sc = ErdosRenyiSC(N_example, d1_target_example, d2_target_example)
-g_sc.summary()
-# Target d1: 6.00, Realized d1: 7.17
-# Target d2: 2.00, Realized d2: 2.38
-
-# Target p1:  0.26086957, Realized p1: 0.31159420
-# Target p2:  0.00790514, Realized p2: 0.00938735
-
-# Initial p_G used for G(N, p_G): 0.11986219
-
-# Realized number of pw edges:  86/276
-# Realized number of ho edges:  19/2024
-
-# Is valid SC: True
-```
-<img src="figures/higher_order_structures/ho_erdos_renyi_sc_spring_layout.svg" alt="Erdos-Renyi SC" width="450" height="450">
-
 ### Cycle hypergraph
 Example of a cycle / ring hypergraph on 10 nodes:
 ```python
@@ -64,6 +41,30 @@ file_name = "../figures/higher_order_structures/ho_cycle_hypergraph.svg"
 draw_hypergraph(g, fname=file_name)
 ```
 <img src="figures/higher_order_structures/ho_cycle_hypergraph.svg" alt="Cycle Hypergraph" width="450" height="450">
+
+### Erdos-Renyi like simplicial complex
+```python
+from higher_order_structures import ErdosRenyiSC
+# parameters for a small example
+N_example = 24
+d1_target_example = 6.0 # average pairwise degree
+d2_target_example = 2.0 # average higher-order degree
+g_sc = ErdosRenyiSC(N_example, d1_target_example, d2_target_example)
+g_sc.summary()
+# Target d1: 6.00, Realized d1: 7.17
+# Target d2: 2.00, Realized d2: 2.38
+
+# Target p1:  0.26086957, Realized p1: 0.31159420
+# Target p2:  0.00790514, Realized p2: 0.00938735
+
+# Initial p_G used for G(N, p_G): 0.11986219
+
+# Realized number of pw edges:  86/276
+# Realized number of ho edges:  19/2024
+
+# Is valid SC: True
+```
+<img src="figures/higher_order_structures/ho_erdos_renyi_sc_spring_layout.svg" alt="Erdos-Renyi SC" width="450" height="450">
 
 TODO: add examples of 3 main classes of simplicial complexes, more heterogeneous E-R SC, regular, and generalized scale-free, maybe the star graph too.
 
