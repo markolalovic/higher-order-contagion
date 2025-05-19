@@ -114,7 +114,14 @@ def get_p1_p2_for_target_degrees(d1, d2, N):
 def get_p1_p2_for_target_degrees_precise(d1, d2, N):
     r"""
     Calculates p_G for initial G ~ G(N, p_G) and p_delta (prob of adding 2-simplices)
-    to achieve target average degrees: d1 and d2 more precisely
+    to achieve target average degrees: d1 and d2 more precisely.
+
+    NOTE: 
+      * `denominator_pG` being close to 0 means that $p_{\Delta}$ is close to 1 
+      * That is all possible triangles are formed
+      * If also `target_p1` is close to 1, That is when `d_1` is close to `N - 1` 
+      * Then `p_G -> 0/0`
+      * In this case `p_G` can be anything as all edges are formed by triangles anyway
     """
     p_delta = (2.0 * d2) / ((N - 1.0) * (N - 2.0)) # this is the same
     p_delta = np.clip(p_delta, 0.0, 1.0) # clip p_delta s.t. it's valid probability
@@ -130,3 +137,4 @@ def get_p1_p2_for_target_degrees_precise(d1, d2, N):
     p_G = numerator_pG / denominator_pG
     p_G = np.clip(p_G, 0.0, 1.0)
     return p_G, p_delta
+
