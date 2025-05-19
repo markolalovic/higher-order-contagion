@@ -4,6 +4,8 @@
 from higher_order_structures import HigherOrderStructure, Complete, RandomHypergraph
 from higher_order_structures import ErdosRenyiSC
 
+from draw_utils import draw_hypergraph
+
 def example():
     r"""Example of a higher-order structure."""
     N = 4
