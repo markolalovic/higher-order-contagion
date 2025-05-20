@@ -5,7 +5,7 @@ import matplotlib.pylab as plt
 from scipy.integrate import solve_ivp
 from scipy.special import comb
 
-from higher_order_structures import CompleteHypergraph
+from higher_order_structures import Complete
 from simulate_gillespie import *
 from solve_kolmogorov import *
 import birdepy as bd
@@ -55,7 +55,7 @@ def list_all_ODEs_using_estimates(g, ak_hats, bk_hats, mu):
       return dpdt
     return ode_system_complete
 
-def calculate_estimates(X_sims, N, min_Tk_threshold=1e-9): # Removed time_max, increased default threshold slightly
+def calculate_estimates(X_sims, N, min_Tk_threshold=1e-9):
     r""" Calculates estimates of a_k, b_k, c_k based on:
 
         * MLE estimators: these have a hat
@@ -64,9 +64,9 @@ def calculate_estimates(X_sims, N, min_Tk_threshold=1e-9): # Removed time_max, i
     
     # Returns full M = N + 1 length arrays a_k_hat, b_k_hat, ...
 
-    TODO:
-        * c_k hat is used for diagnostics only, could be used to see if it has effect!
-        * since a_k, b_k hats could be underestimated, but c_k not since we use actual c_k
+    TODO: 
+      - Calculate also birth rate lambda_k = a_k + b_k
+      - Add the means and StdDevs for a_k, b_k, lambda_k
     """
     # initialize the aggregated stats
     T_k = np.zeros(N + 1, dtype=np.float64) # time spent in states k
@@ -222,7 +222,7 @@ if __name__ == "__main__":
 
     # TODO: increase these values
     N = 100
-    g = CompleteHypergraph(N)
+    g = Complete(N)
 
     I0 = 1
 

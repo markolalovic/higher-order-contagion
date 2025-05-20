@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from itertools import combinations
 
-from higher_order_structures import CompleteHypergraph
+from higher_order_structures import Complete
 
 import simulate_gillespie
 from scipy.integrate import solve_ivp
@@ -248,7 +248,7 @@ def list_all_ODEs_complete(g, beta1, beta2, mu):
 
     # precompute (cache it as a dictionary to speed things up):
     # {state k: (s1, s2) = total_SI_pairs_and_SII_triples(g, state_k)}
-    # for example if g = CompleteHypergraph(N = 5) then s12_cache is:
+    # for example if g = Complete(N = 5) then s12_cache is:
     # {0: (0, 0), 1: (4, 0), 2: (6, 3), 3: (6, 6), 4: (4, 6), 5: (0, 0)}
     s12_cache = {}
     for state_k_ in all_states:
@@ -299,7 +299,7 @@ def list_all_ODEs_random(g, beta1, beta2, mu, p1, p2):
 
     # precompute (cache it as a dictionary to speed things up):
     # {state k: (s1, s2) = total_SI_pairs_and_SII_triples(g, state_k)}
-    # for example if g = CompleteHypergraph(N = 5) then s12_cache is:
+    # for example if g = Complete(N = 5) then s12_cache is:
     # {0: (0, 0), 1: (4, 0), 2: (6, 3), 3: (6, 6), 4: (4, 6), 5: (0, 0)}
     s12_cache = {}
     for state_k_ in all_states:
@@ -371,7 +371,7 @@ def test_on_complete():
     mu    = 1           # recovery rate
     I0 = 10 # number of initial infected
     time_max = 10   # maximum time duration
-    g = CompleteHypergraph(N)
+    g = Complete(N)
     print(f"Setup: \n")
     print(f"\tH = {g.__class__.__name__}, N = {N}, I0 = {I0}\n")
     print(f"\tbeta1 = {beta1}, beta2 = {beta2}, mu = {mu}\n")

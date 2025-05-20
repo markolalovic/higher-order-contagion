@@ -7,7 +7,7 @@ from copy import deepcopy
 rn = np.random.randint(100, size=1)[0]
 rng = np.random.default_rng(rn)
 
-from higher_order_structures import CompleteHypergraph
+from higher_order_structures import Complete
 from higher_order_structures import RandomHypergraph
 
 import pandas as pd
@@ -502,7 +502,7 @@ def run_on_random():
     time_max = 10 # maximum time duration
 
     # generate hypergraph
-    # g = CompleteHypergraph(N)
+    # g = Complete(N)
     g = RandomHypergraph(N, p1, p2)
     g.print()
 
@@ -539,7 +539,7 @@ def run_on_complete():
     time_max = 10  # maximum time duration
     initial_infections = list(range(I0)) # which nodes are infected at t=0
 
-    g = CompleteHypergraph(N)
+    g = Complete(N)
     print(f"Setup: \n")
     print(f"\tH = {g.__class__.__name__}, N = {N}, I0 = {I0}\n")
     print(f"\tbeta1 = {beta1}, beta2 = {beta2}, mu = {mu}\n")
