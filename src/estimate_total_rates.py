@@ -103,21 +103,27 @@ def calculate_estimates(X_sims, N, min_Tk_threshold=1e-9):
     print(f"Total events processed: {total_events_processed}")
     
     # --- Calculate MLEs ---
-    # a_k_hat = np.zeros(N + 1, dtype=float)
-    # b_k_hat = np.zeros(N + 1, dtype=float)
-    # c_k_hat = np.zeros(N + 1, dtype=float)
+    a_k_hat = np.zeros(N + 1, dtype=float)
+    b_k_hat = np.zeros(N + 1, dtype=float)
+    c_k_hat = np.zeros(N + 1, dtype=float)
     # initialize with NaN
-    a_k_hat = np.full(N + 1, np.nan, dtype=float)
-    b_k_hat = np.full(N + 1, np.nan, dtype=float)
-    c_k_hat = np.full(N + 1, np.nan, dtype=float)    
+    # a_k_hat = np.full(N + 1, np.nan, dtype=float)
+    # b_k_hat = np.full(N + 1, np.nan, dtype=float)
+    # c_k_hat = np.full(N + 1, np.nan, dtype=float)    
+
+    # --- TODO: collect also the counts ---
 
     for k in range(N + 1):
         if T_k[k] >= min_Tk_threshold:
             a_k_hat[k] = U_k[k] / T_k[k]
             b_k_hat[k] = V_k[k] / T_k[k]
             c_k_hat[k] = D_k[k] / T_k[k]
+        # else estimates remain 0
         # else: estimates remain NaN, indicating insufficient data or state not visited
     
+    # to get valid_k indices use Tk
+    # valid_k_idx = estimates["T_k"] > min_Tk_threshold  
+
     lambda_k_hat = a_k_hat + b_k_hat # NaN + number = NaN
     return {
         "a_k_hat": a_k_hat,
@@ -129,7 +135,6 @@ def calculate_estimates(X_sims, N, min_Tk_threshold=1e-9):
         "V_k": V_k,
         "D_k": D_k,
     }
-
 
 def complete_birth_rate(z, p):
     N_fixed = 100 # TODO: write a wrapper
