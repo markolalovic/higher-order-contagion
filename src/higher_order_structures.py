@@ -188,7 +188,7 @@ class ErdosRenyiSC(HigherOrderStructure):
             if N_realized == N:
                 break
         else:
-            print(f"Could not generate connected G(n, p1) on {N} nodes after 1000 attempts, increase d1.")
+            print(f"Could not generate connected G(n, p1) on {N} nodes after {attempts} attempts, increase d1.")
         # TODO: Could consider taking giant component of G(n, p1) instead
 
         # initialize HO structure with N_realized
