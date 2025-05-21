@@ -204,21 +204,21 @@ int main(int argc, char** argv){
 	if (figure==1){
 		for (i=0;i<N;i++){ for(j=i+1;j<N;j++){ if(a[i][j]==1){ fprintf(fp_edges,"%d %d\n",i,j); }}}
         fp_triangles = fopen("SC_d2_triangles.txt", "w");
-        else {
-            for (i = 0; i < N; i++) {
-                for (j = 0; j < kg[i]; j++) {
-                    if (tri[i] == NULL || tri[i][0] == NULL || tri[i][1] == NULL) continue;
-                    int n1 = i, n2 = tri[i][0][j], n3 = tri[i][1][j];
-                    if      (n1 < n2 && n2 < n3) fprintf(fp_triangles, "%d %d %d\n", n1, n2, n3);
-                    else if (n1 < n3 && n3 < n2) fprintf(fp_triangles, "%d %d %d\n", n1, n3, n2);
-                    else if (n2 < n1 && n1 < n3) fprintf(fp_triangles, "%d %d %d\n", n2, n1, n3);
-                    else if (n2 < n3 && n3 < n1) fprintf(fp_triangles, "%d %d %d\n", n2, n3, n1);
-                    else if (n3 < n1 && n1 < n2) fprintf(fp_triangles, "%d %d %d\n", n3, n1, n2);
-                    else if (n3 < n2 && n2 < n1) fprintf(fp_triangles, "%d %d %d\n", n3, n2, n1);
-                }
+        // else {
+        for (i = 0; i < N; i++) {
+            for (j = 0; j < kg[i]; j++) {
+                if (tri[i] == NULL || tri[i][0] == NULL || tri[i][1] == NULL) continue;
+                int n1 = i, n2 = tri[i][0][j], n3 = tri[i][1][j];
+                if      (n1 < n2 && n2 < n3) fprintf(fp_triangles, "%d %d %d\n", n1, n2, n3);
+                else if (n1 < n3 && n3 < n2) fprintf(fp_triangles, "%d %d %d\n", n1, n3, n2);
+                else if (n2 < n1 && n1 < n3) fprintf(fp_triangles, "%d %d %d\n", n2, n1, n3);
+                else if (n2 < n3 && n3 < n1) fprintf(fp_triangles, "%d %d %d\n", n2, n3, n1);
+                else if (n3 < n1 && n1 < n2) fprintf(fp_triangles, "%d %d %d\n", n3, n1, n2);
+                else if (n3 < n2 && n2 < n1) fprintf(fp_triangles, "%d %d %d\n", n3, n2, n1);
             }
-            fclose(fp_triangles);
         }
+        fclose(fp_triangles);
+        // }
 	}
 	fclose(fp_edges);
 
