@@ -13,13 +13,12 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import random
 # from scipy.stats import nbinom
-from higher_order_structures import EmptyHypergraph
+from higher_order_structures import HigherOrderStructure
 import os
 
 from scipy.stats import zipf # for power-law Zeta distribution
 # from itertools import combinations
 from scipy.special import comb
-
 
 def scale_free_hypergraph(N, gamma_pw, k_min_pw, gamma_ho, k_min_ho, attempts=1000):
     r"""
@@ -69,20 +68,17 @@ def scale_free_hypergraph(N, gamma_pw, k_min_pw, gamma_ho, k_min_ho, attempts=10
 
     return all_edges, degrees_pw, degrees_ho
 
-def test_scale_free_hypergraph():
-    # example setup
-    N = 2000        # number of nodes
-
-    gamma_pw = 2.5  # exponent for scale-free networks
-    k_min_pw = 2    # minimum pairwise degree
-
-    gamma_ho = 2.5  # can be different for HO interactions
-    k_min_ho = 2    # minimum number of triangles a node is in
-
+def test_scale_free_hypergraph(
+        N=1000,  # number of nodes
+        gamma_pw = 2.5,  # exponent for scale-free networks
+        k_min_pw = 2,    # minimum pairwise degree
+        gamma_ho = 2.5,  # can be different for HO interactions
+        k_min_ho = 2    # minimum number of triangles a node is in
+        ):
     all_edges, degrees_pw, degrees_ho = scale_free_hypergraph(
             N, gamma_pw, k_min_pw, gamma_ho, k_min_ho)
 
-    g = EmptyHypergraph(N)
+    g = HigherOrderStructure(N)
     g.name = "ScaleFree"
     g.set_edges(all_edges)
     g.print()
@@ -153,7 +149,7 @@ def test_scale_free_hypergraph():
     fig.suptitle(title, fontsize=16)
     
     name = f"scale_free_hypergraph_degree_distributions"
-    save_dir = "../figures/hypergraphs/"
+    save_dir = "../figures/higher_order_structures/"
     save_path = os.path.join(save_dir, f"{name}.pdf")
     fig.savefig(save_path, format="pdf", bbox_inches="tight")
     print(f"Figure saved to: {save_path}")

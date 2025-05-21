@@ -76,6 +76,7 @@ def regular_maximum_overlapped_simplicial_complex(n, k, seed=None):
 
 # -----------------------------------------------------------------------------------
 # Scale-free SC (Bianconi, Courtney)
+# TODO: missing `convert_adjacency_matrix_to_edges_list`
 # -----------------------------------------------------------------------------------
 def choose_bianconi_courtney(x, kgi):
     r"""

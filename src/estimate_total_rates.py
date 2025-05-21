@@ -8,7 +8,7 @@ from scipy.special import comb
 from higher_order_structures import Complete
 from simulate_gillespie import *
 from solve_kolmogorov import *
-# import birdepy as bd
+import birdepy as bd
 import scipy.linalg
 from scipy.sparse import diags
 import pickle
@@ -57,15 +57,13 @@ def list_all_ODEs_using_estimates(g, ak_hats, bk_hats, mu):
 
 def calculate_estimates(X_sims, N, min_Tk_threshold=1e-9):
     r""" Calculates estimates of a_k, b_k, c_k based on:
-
-        * MLE estimators: these have a hat
-
-        * Empirical estimators: these have tilde # TODO: later
+      - Total rate MLE estimators: these have a hat
+      - Empirical estimators with counts: these have tilde # TODO: later
+      - Total birth rate lambda_k = a_k + b_k # TODO: for both
     
     # Returns full M = N + 1 length arrays a_k_hat, b_k_hat, ...
 
-    TODO: 
-      - Calculate also birth rate lambda_k = a_k + b_k
+    TODO:
       - Add the means and StdDevs for a_k, b_k, lambda_k
     """
     # initialize the aggregated stats
