@@ -11,6 +11,117 @@ import random
 from itertools import combinations
 
 # -----------------------------------------------------------------------------------
+# Scale-Free SC
+# -----------------------------------------------------------------------------------
+def generate_sf_sc_components(N_nodes, m_min_kgi, gamma_kgi,
+                              max_retries_for_stub_set=10, # N // 100, for N = 1000
+                              max_initial_stub_gen_attempts=100):
+    r"""
+    Generates a Simplicial Complex (up to 2-simplices) with scale-free
+    generalized degrees for 2-simplices k_gi = target number of triangles a node is part of.
+
+    Given:
+        * m_min_kgi: minimum number of target triangles per node
+        * gamma_kgi: exponent of P(k_gi) ~ k_gi^(-gamma_kgi)
+        * max_retries_for_stub_set: max retries if current 3 stubs form an illegal triangle
+        * max_initial_stub_gen_attempts: max attempts to generate valid total stub sum
+
+    Adapted from:
+        * O.T. Courtney and G. Bianconi
+        * "Generalized network structures: the configuration model and the canonical ensemble of
+        * simplicial complexes"
+        * Phys. Rev. E 93, 062311 (2016)
+        * http://dx.doi.org/10.1103/PhysRevE.93.062311
+        * https://github.com/ginestrab/Ensembles-of-Simplicial-Complexes/blob/8c32d11a281f31813c8e0693cd010b07e2c823b3/SC_d2.c    
+    """
+    kgi_stubs_generated = np.zeros(N_nodes, dtype=int)
+    for _ in range(max_initial_stub_gen_attempts):
+        for i in range(N_nodes):
+            u = random.random()
+            while u == 0.0: u = random.random()
+            drawn_kgi = int(m_min_kgi * (u**(-1.0 / (gamma_kgi - 1.0))))
+            kgi_stubs_generated[i] = max(m_min_kgi, drawn_kgi)
+            max_poss_tri_node = (N_nodes - 1) * (N_nodes - 2) / 2.0
+            kgi_stubs_generated[i] = min(kgi_stubs_generated[i], int(max_poss_tri_node))
+            if kgi_stubs_generated[i] < 0: kgi_stubs_generated[i] = 0
+
+        total_stubs = np.sum(kgi_stubs_generated)
+        if total_stubs % 3 == 0 and total_stubs >=3 : break
+    else:
+        remainder = total_stubs % 3
+        if remainder != 0:
+            eligible_nodes = np.where(kgi_stubs_generated > m_min_kgi)[0]
+            if len(eligible_nodes) < remainder: eligible_nodes = np.where(kgi_stubs_generated > 0)[0]
+            for _i_dec in range(remainder):
+                if not eligible_nodes.size: break
+                node_to_dec = random.choice(eligible_nodes)
+                if kgi_stubs_generated[node_to_dec] > 0: kgi_stubs_generated[node_to_dec] -= 1
+            total_stubs = np.sum(kgi_stubs_generated)
+        if total_stubs < 3 or total_stubs % 3 != 0:
+            print(f"Failed, returning empty SC components. Final stubs: {total_stubs}")
+            return 0, [], []
+
+    stub_list = []
+    for node_idx, num_s in enumerate(kgi_stubs_generated):
+        stub_list.extend([node_idx] * num_s)
+    random.shuffle(stub_list)
+
+    triangles_set = set()
+    edges_set = set()
+    
+    current_stub_idx = 0
+    while current_stub_idx + 2 < len(stub_list):
+        retries_for_current_set = 0
+        while retries_for_current_set < max_retries_for_stub_set:
+            if current_stub_idx + 2 >= len(stub_list): break # ran out of stubs
+
+            node1 = stub_list[current_stub_idx]
+            node2 = stub_list[current_stub_idx + 1]
+            node3 = stub_list[current_stub_idx + 2]
+
+            is_legal = False
+            if len({node1, node2, node3}) == 3: # nodes should be distinct
+                proposed_triangle = tuple(sorted((node1, node2, node3)))
+                if proposed_triangle not in triangles_set:
+                    is_legal = True
+            
+            if is_legal:
+                triangles_set.add(proposed_triangle)
+                edges_set.add(tuple(sorted((node1, node2))))
+                edges_set.add(tuple(sorted((node1, node3))))
+                edges_set.add(tuple(sorted((node2, node3))))
+                current_stub_idx += 3 # used all 3 stubs
+                break # break from retry for this set
+            else:
+                retries_for_current_set += 1
+                if retries_for_current_set < max_retries_for_stub_set:
+                    # NOTE: simple backtrack: 
+                    # reshuffle remaining stubs and retry current position
+                    if len(stub_list[current_stub_idx:]) >=3:
+                         # reshuffle the tail from current_stub_idx to the end
+                         # next attempt at current_stub_idx should pick different stubs
+                        temp_tail = stub_list[current_stub_idx:]
+                        random.shuffle(temp_tail)
+                        stub_list[current_stub_idx:] = temp_tail
+                    else: 
+                        # not enough stubs to retry
+                        current_stub_idx +=3 # give up on these 3
+                        # break from retry
+                        break 
+                else: 
+                    # max retries for this specific set of 3 stubs
+                    # print(f"max retries for stubs at index {current_stub_idx}, moving on")
+                    current_stub_idx += 3 # give up on these 3
+                    break # break from retry
+        else: 
+            # retry loop finisheed due to max_retries and didn't break before
+            if current_stub_idx + 2 >= len(stub_list): 
+                break
+        
+    # returning kgi_stubs_generated for plots 
+    return N_nodes, list(edges_set), list(triangles_set), kgi_stubs_generated
+
+# -----------------------------------------------------------------------------------
 # Regular Maximum overlapped SC
 # -----------------------------------------------------------------------------------
 def regular_maximum_overlapped_simplicial_complex(n, k, seed=None):
@@ -33,7 +144,7 @@ def regular_maximum_overlapped_simplicial_complex(n, k, seed=None):
     n : int
       The number of nodes for the starting k-regular random graph. 
       The value of $N \times k$ must be even.
-      The numer of nodes of the simplicial complex will be k*N.
+      The numer of nodes of the simplicial complex will be k * n <-- 
     seed : int, random_state, or None (default)
         Indicator of random number generation state.
         
@@ -46,9 +157,9 @@ def regular_maximum_overlapped_simplicial_complex(n, k, seed=None):
     triangles_list : ndarray
       Array composed by a list of tuples [(0,1,2),(2,3,4),...,etc] representing the set of 2-simplices
     """
-    
-
-    M = nx.random_regular_graph(k,n,seed=seed)
+    # Kim & Vu (2003) Generating Random Regular Graphs 
+    # NOTE: asympt uniform if d << n^(1/3), which holds since we want sparser graphs
+    M = nx.random_regular_graph(k,n,seed=seed) 
     
     graph_to_simplex = {ii:[ii*k+r for r in range(k)] for ii in range(n)}
     
@@ -72,7 +183,7 @@ def regular_maximum_overlapped_simplicial_complex(n, k, seed=None):
         
     edges_list = np.array(G.edges())
     N = n*k
-    return N,np.array(edges_list), np.array(triangle_list)
+    return N, np.array(edges_list), np.array(triangle_list)
 
 # -----------------------------------------------------------------------------------
 # Scale-free SC (Bianconi, Courtney)
