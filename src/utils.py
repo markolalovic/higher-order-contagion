@@ -1,7 +1,123 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import Counter # for counting degrees
 
+from scipy.stats import zipf # for power-law Zeta distribution
+from scipy.stats import powerlaw # more direct power-law draw
+from scipy.optimize import curve_fit # for plotting fits
+
+def test_generate_sf_sc(pw_degrees_sc, ho_degrees_sc, kgi_generated,
+                        N, gamma_sc, m_sc, figure_fname=None):
+    # TODO: plot_degree_distribution_ScaleFreeSC
+
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+
+    title = f"Degree Distributions: ScaleFreeSC with N = {N}, target gamma_ho = {gamma_sc}, target m_ho = {m_sc}"
+    fig.suptitle(title, fontsize=16)
+
+    # -------------
+    # PW degrees
+    ax = axes[0]
+
+    realized_avg_pw = np.mean(pw_degrees_sc)
+    realized_max_pw = np.max(pw_degrees_sc)
+    min_val_pw = np.min(pw_degrees_sc)
+
+    bins_pw = np.logspace(np.log10(min_val_pw), np.log10(realized_max_pw + 1), 25)
+    counts_pw, _ = np.histogram(pw_degrees_sc, bins=bins_pw, density=True)
+    bin_centers_pw = (bins_pw[:-1] + bins_pw[1:]) / 2
+    valid_pw = counts_pw > 0
+
+    ax.loglog(bin_centers_pw[valid_pw], counts_pw[valid_pw], 'x', color='red',
+                markersize=7, alpha=0.9, label='Realized PW Degrees')
+
+    # power-law fit for realized PW degrees
+
+    def power_law_func_log(log_k, log_C, gamma_fit_param): return log_C - gamma_fit_param * log_k
+
+    # some reasonable initial guess for gamma_pw_fit: gamma_sc or 2.5
+    popt_pw, _ = curve_fit(power_law_func_log, 
+                        np.log10(bin_centers_pw[valid_pw]), 
+                        np.log10(counts_pw[valid_pw]), 
+                        p0=[0, gamma_sc], 
+                        maxfev=3000)
+
+    gamma_pw_fit_val = popt_pw[1]
+    k_fit_range = np.logspace(np.log10(bin_centers_pw[valid_pw][0]), np.log10(bin_centers_pw[valid_pw][-1]), 50)
+
+    # theoretical fit as solid black line
+    ax.plot(k_fit_range, (10**popt_pw[0]) * k_fit_range**(-gamma_pw_fit_val), 'k-', alpha=0.8,
+                label=f'Fit: P(k_pw) ~ k_pw^{{-{gamma_pw_fit_val:.2f}}}')
+
+
+    ax.set_title(f'PW Degrees, Realized Avg = {realized_avg_pw:.2f}, Realized Max = {realized_max_pw}')
+    ax.set_xlabel('Pairwise Degree k_pw')
+    ax.set_ylabel('P(k_pw)')
+    ax.legend()
+    ax.grid(True, which="both", ls=":", alpha=0.7)
+
+    # -------------
+    # HO degrees
+    ax = axes[1]
+    realized_avg_ho = 0
+    realized_max_ho = 0
+
+    realized_avg_ho = np.mean(ho_degrees_sc)
+    realized_max_ho = np.max(ho_degrees_sc)
+    min_val_ho = np.min(ho_degrees_sc)
+
+    bins_ho_actual = np.logspace(np.log10(min_val_ho), np.log10(realized_max_ho + 1), 25)
+    counts_ho_actual, _ = np.histogram(ho_degrees_sc, bins=bins_ho_actual, density=True)
+    bin_centers_ho_actual = (bins_ho_actual[:-1] + bins_ho_actual[1:]) / 2
+    valid_ho_actual = counts_ho_actual > 0
+
+    # realized HO degrees as red crosses
+    ax.loglog(bin_centers_ho_actual[valid_ho_actual], counts_ho_actual[valid_ho_actual], 'x', color='red',
+                markersize=7, alpha=0.9, label='Realized HO Degrees (k_ho)')
+
+    # plot the target kgi distribution, sequence of HO degrees
+
+    min_val_kgi = np.min(kgi_generated[kgi_generated > 0]) if np.any(kgi_generated > 0) else 1
+    max_val_kgi = np.max(kgi_generated)
+
+    bins_kgi = np.logspace(np.log10(min_val_kgi), np.log10(max_val_kgi + 1), 25)
+    counts_kgi, _ = np.histogram(kgi_generated, bins=bins_kgi, density=True)
+    bin_centers_kgi = (bins_kgi[:-1] + bins_kgi[1:]) / 2
+    valid_kgi = counts_kgi > 0
+
+    # target generalized degrees as blue dots
+    ax.loglog(bin_centers_kgi[valid_kgi], counts_kgi[valid_kgi], 'o', color='blue', markersize=5,
+                alpha=0.7, label='Target Gen. Degree (k_gi) Dist.')
+
+    # theoretical line P(k) ~ k^-gamma_sc for k_gi
+    k_plot = np.logspace(np.log10(max(m_sc,1 if min_val_kgi==0 else min_val_kgi)), 
+                        np.log10(max_val_kgi if max_val_kgi > m_sc else m_sc +1.01), 50)
+
+    idx_min_kgi_bin = np.where(bin_centers_kgi[valid_kgi] >= m_sc)[0]
+
+    k_min_plot_for_norm = bin_centers_kgi[valid_kgi][idx_min_kgi_bin[0]]
+    P_k_min_plot = counts_kgi[valid_kgi][idx_min_kgi_bin[0]]
+    C_norm = P_k_min_plot * (k_min_plot_for_norm**(gamma_sc))
+
+    # theoretical fit as solid black line
+    ax.loglog(k_plot, C_norm * (k_plot**(-gamma_sc)),
+                'k-', alpha=0.8, label=f'Target P(k_gi) ~ k_gi^{{-{gamma_sc:.2f}}}')
+
+    ax.set_title(f'HO Degrees, Realized Avg = {realized_avg_ho:.2f}, Realized Max = {realized_max_ho}')
+    ax.set_xlabel('Degree (k_ho or k_gi)')
+    ax.set_ylabel('P(degree)')
+    ax.legend()
+    ax.grid(True, which="both", ls=":", alpha=0.7)
+
+    plt.tight_layout(rect=[0, 0.03, 1, 0.93])
+    if figure_fname != None:
+        save_dir = "../figures/higher_order_structures/"
+        save_path = os.path.join(save_dir, f"{figure_fname}.pdf")
+        plt.savefig(save_path, format="pdf", bbox_inches="tight")
+        print(f"Figure saved to: {save_path}")
+    plt.show()
+    
 def plot_degree_distribution_ErdosRenyiSC(g):
     N = g.N
     degrees_pw_instance = np.zeros(N, dtype=int)
