@@ -234,8 +234,8 @@ class ErdosRenyiSC(HigherOrderStructure):
 
         # using precise p1_initial, p2_triangles, the properties simplify
         # TODO: check that means of realized p1, p2 equal targets p1, p2
-        self.target_p1 = self.d1_target / (self.N - 1.0)
-        self.target_p2 = (2.0 * self.d2_target) / ((self.N - 1.0) * (self.N - 2.0))
+        self.p1_target = self.d1_target / (self.N - 1.0)
+        self.p2_target = (2.0 * self.d2_target) / ((self.N - 1.0) * (self.N - 2.0))
 
     def calculate_expected_p1_overall(self):
         r"""
@@ -268,8 +268,8 @@ class ErdosRenyiSC(HigherOrderStructure):
         print(f"\tTarget d1: {self.d1_target:.2f}, Realized d1: {self.d1_realized:.2f}")
         print(f"\tTarget d2: {self.d2_target:.2f}, Realized d2: {self.d2_realized:.2f}\n")
 
-        print(f"\tTarget p1:  {self.target_p1:.8f}, Realized p1: {self.p1_realized:.8f}")
-        print(f"\tTarget p2:  {self.target_p2:.8f}, Realized p2: {self.p2_realized:.8f}\n")
+        print(f"\tTarget p1:  {self.p1_target:.8f}, Realized p1: {self.p1_realized:.8f}")
+        print(f"\tTarget p2:  {self.p2_target:.8f}, Realized p2: {self.p2_realized:.8f}\n")
 
         print(f"\tInitial p_G used for G(N, p_G): {self.p1_initial:.8f}\n")
 

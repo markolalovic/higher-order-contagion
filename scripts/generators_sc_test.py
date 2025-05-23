@@ -337,11 +337,12 @@ def check_full_triangle_property(edges, triangles):
     all_nodes_in_edges = set(node for edge in edge_set for node in edge)
     all_nodes_in_triangles = set(node for triangle in triangle_set for node in triangle)
     all_nodes = all_nodes_in_edges.union(all_nodes_in_triangles)
-    node_list = sorted(list(all_nodes)) # Iterate over sorted nodes
 
+    # iterate over sorted nodes
+    node_list = sorted(list(all_nodes))
     empty_triangles_found = []
-    # go over all possible 3-cliques based on node_list
     for i_idx, node_i in enumerate(node_list):
+        # go over all possible 3-cliques based on node_list
         # consider j > i and k > j to avoid duplicates
         for j_idx in range(i_idx + 1, len(node_list)):
             node_j = node_list[j_idx]
@@ -365,8 +366,7 @@ def check_full_triangle_property(edges, triangles):
                         empty_triangles_found.append(potential_empty_triangle)
                         print(f"Found an empty triangle: {potential_empty_triangle}")
                         return False
-    return True   
-
+    return True
 
 # -----------------------------------------------------------------------------------
 # Scale-free SC (Bianconi, Courtney)

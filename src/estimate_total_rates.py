@@ -8,7 +8,7 @@ from scipy.special import comb
 from higher_order_structures import Complete
 from simulate_gillespie import *
 from solve_kolmogorov import *
-# import birdepy as bd
+import birdepy as bd
 import scipy.linalg
 from scipy.sparse import diags
 import pickle
