@@ -338,7 +338,6 @@ def random_regular_hypergraph(k_1,k_2, N, seed=None):
     """
     N*k_2/3 must be an int!
     
-    
     Returns a k-regular random hypergraph, here each node has exactly
     - 1-degree = k_1
     - 2-degree = k_2
@@ -351,7 +350,6 @@ def random_regular_hypergraph(k_1,k_2, N, seed=None):
     N : int
       The number of nodes for the starting k-regular random graph. 
       The value of $N \times k$ must be even.
-      The numer of nodes of the hypergraph will be k*N.
     seed : int, random_state, or None (default)
         Indicator of random number generation state.
         
@@ -389,8 +387,12 @@ def random_regular_hypergraph(k_1,k_2, N, seed=None):
                     pass
                 if counter == k_2*N*10:
                     raise ValueError("Too many attempts, try again")
-                    
-    return G, np.array(triangles_list)
+
+    # return G, np.array(triangles_list)
+    # extract the edges 
+    edges = np.array(G.edges())
+    triangles = np.array(triangles_list)
+    return edges, triangles
 
 """
 ### generate edges_list 

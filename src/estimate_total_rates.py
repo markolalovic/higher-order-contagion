@@ -8,7 +8,7 @@ from scipy.special import comb
 from higher_order_structures import Complete
 from simulate_gillespie import *
 from solve_kolmogorov import *
-import birdepy as bd
+# import birdepy as bd
 import scipy.linalg
 from scipy.sparse import diags
 import pickle
@@ -21,7 +21,7 @@ def list_all_ODEs_using_estimates(g, ak_hats, bk_hats, mu):
         * And Complete Hypergraph g
     """
     N = g.number_of_nodes()
-    all_states = list_all_states(g)
+    all_states = list(range(N + 1))
     M = len(all_states)
     
     def ode_system_complete(t, p):
@@ -295,7 +295,7 @@ if __name__ == "__main__":
 
     ## --- Solve KEs and compare ---
     M = N + 1
-    all_states = list_all_states(g)
+    all_states = list(range(N + 1))
 
     # set the initial condition
     p0 = np.zeros(M)
