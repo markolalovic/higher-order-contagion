@@ -14,6 +14,141 @@ from itertools import combinations
 # Scale-Free SC
 # -----------------------------------------------------------------------------------
 def generate_sf_sc_components(N_nodes, m_min_kgi, gamma_kgi,
+                                      max_retries_for_stub_set=10, # N // 100, for N = 1000
+                                      max_initial_stub_gen_attempts=100):
+    r"""
+    NOTE: This is the version with full-triangle property.
+
+    Generates a Simplicial Complex (up to 2-simplices) with scale-free
+    generalized degrees for 2-simplices k_gi = target number of triangles a node is part of.
+
+    Given:
+        * m_min_kgi: minimum number of target triangles per node
+        * gamma_kgi: exponent of P(k_gi) ~ k_gi^(-gamma_kgi)
+        * max_retries_for_stub_set: max retries if current 3 stubs form an illegal triangle
+        * max_initial_stub_gen_attempts: max attempts to generate valid total stub sum
+
+    Adapted from:
+        * O.T. Courtney and G. Bianconi
+        * "Generalized network structures: the configuration model and the canonical ensemble of
+        * simplicial complexes"
+        * Phys. Rev. E 93, 062311 (2016)
+        * http://dx.doi.org/10.1103/PhysRevE.93.062311
+        * https://github.com/ginestrab/Ensembles-of-Simplicial-Complexes/blob/8c32d11a281f31813c8e0693cd010b07e2c823b3/SC_d2.c    
+    """
+    ## Step 1: Generate generalized degree sequence
+    kgi_stubs_generated = np.zeros(N_nodes, dtype=int)
+    
+    for _ in range(max_initial_stub_gen_attempts):
+        # draw from scale-free distribution
+        for i in range(N_nodes):
+            u = random.random()
+            while u == 0.0: 
+                u = random.random()
+            
+            # scale-free draw
+            drawn_kgi = int(m_min_kgi * (u**(-1.0 / (gamma_kgi - 1.0))))
+            
+            # apply constraints
+            max_possible_triangles = (N_nodes - 1) * (N_nodes - 2) // 2
+            kgi_stubs_generated[i] = max(m_min_kgi, min(drawn_kgi, max_possible_triangles))
+        
+        # check if total stubs divisible by 3
+        total_stubs = np.sum(kgi_stubs_generated)
+        if total_stubs % 3 == 0 and total_stubs >= 3:
+            break
+    else:
+        # fix stub sum if not divisible by 3
+        total_stubs = np.sum(kgi_stubs_generated)
+        remainder = total_stubs % 3
+        if remainder != 0:
+            # remove excess stubs
+            nodes_to_adjust = np.where(kgi_stubs_generated > m_min_kgi)[0]
+            if len(nodes_to_adjust) >= remainder:
+                for i in range(remainder):
+                    kgi_stubs_generated[nodes_to_adjust[i]] -= 1
+            total_stubs = np.sum(kgi_stubs_generated)
+        
+        if total_stubs < 3 or total_stubs % 3 != 0:
+            print(f"Failed, returning empty SC components. Final stubs:  {total_stubs}")
+            return N_nodes, [], [], kgi_stubs_generated
+    
+    ## Step 2: Create stub lists
+    # number of triangles (now factor nodes):
+    M = total_stubs // 3
+    
+    # create node stub list
+    node_stubs = []
+    for node_id, degree in enumerate(kgi_stubs_generated):
+        node_stubs.extend([node_id] * degree)
+    
+    ## Step 3: Configuration model matching
+    triangles_set = set()
+    max_global_attempts = 10 # TODO: adjust
+    
+    for _ in range(max_global_attempts):
+        random.shuffle(node_stubs)
+        triangles_set.clear()
+        stub_index = 0
+        success = True
+        
+        # try to form M triangles
+        for triangle_id in range(M):
+            if stub_index + 2 >= len(node_stubs):
+                success = False
+                break
+            
+            # try to form a triangle with next 3 stubs
+            found_valid = False
+            for local_retry in range(max_retries_for_stub_set):
+                if stub_index + 2 >= len(node_stubs):
+                    break
+                
+                # get three nodes
+                nodes = [node_stubs[stub_index], 
+                        node_stubs[stub_index + 1], 
+                        node_stubs[stub_index + 2]]
+                
+                # check if valid triangle (all nodes should be distinct)
+                if len(set(nodes)) == 3:
+                    triangle = tuple(sorted(nodes))
+                    if triangle not in triangles_set:
+                        triangles_set.add(triangle)
+                        stub_index += 3
+                        found_valid = True
+                        break
+                
+                # if invalid, try reshuffling remaining stubs
+                if stub_index + 3 < len(node_stubs):
+                    remaining = node_stubs[stub_index:]
+                    random.shuffle(remaining)
+                    node_stubs[stub_index:] = remaining
+            
+            if not found_valid:
+                # skip these stubs if can't form valid triangle
+                # stub_index += 3  # <- the problem !!
+                # if stub_index >= len(node_stubs):
+                #     success = False
+                #     break
+                success = False
+                break                
+        
+        # if success or len(triangles_set) >= 0.9 * M:
+        #     # accept if successful or got most triangles
+        #     break
+        if len(triangles_set) == M:  # Not >= 0.9 * M
+            break        
+    
+    ## Step 4: Extract edges from (full) triangles
+    edges_set = set()
+    for i, j, k in triangles_set:
+        edges_set.add((min(i, j), max(i, j)))
+        edges_set.add((min(i, k), max(i, k)))
+        edges_set.add((min(j, k), max(j, k)))
+    
+    return N_nodes, list(edges_set), list(triangles_set), kgi_stubs_generated
+
+def generate_sf_sc_components_simple(N_nodes, m_min_kgi, gamma_kgi,
                               max_retries_for_stub_set=10, # N // 100, for N = 1000
                               max_initial_stub_gen_attempts=100):
     r"""
@@ -184,6 +319,54 @@ def regular_maximum_overlapped_simplicial_complex(n, k, seed=None):
     edges_list = np.array(G.edges())
     N = n*k
     return N, np.array(edges_list), np.array(triangle_list)
+
+def check_full_triangle_property(edges, triangles):
+    r"""
+    Checks if the "full triangle property" holds for a given set of
+    edges and triangles:
+    
+    This means that if three nodes {i, j, k} form a 3-clique 
+    (all pairwise edges {i, j}, {j, k}, {i, k} exist),
+    then the 2-simplex {i, j, k} must also exist in the triangles list
+    """
+    # convert to sorted tuples for lookup
+    edge_set = {tuple(sorted(edge)) for edge in edges if len(edge) == 2}
+    triangle_set = {tuple(sorted(triangle)) for triangle in triangles if len(triangle) == 3}
+
+    # determine the node set    
+    all_nodes_in_edges = set(node for edge in edge_set for node in edge)
+    all_nodes_in_triangles = set(node for triangle in triangle_set for node in triangle)
+    all_nodes = all_nodes_in_edges.union(all_nodes_in_triangles)
+    node_list = sorted(list(all_nodes)) # Iterate over sorted nodes
+
+    empty_triangles_found = []
+    # go over all possible 3-cliques based on node_list
+    for i_idx, node_i in enumerate(node_list):
+        # consider j > i and k > j to avoid duplicates
+        for j_idx in range(i_idx + 1, len(node_list)):
+            node_j = node_list[j_idx]
+            # check if edge {i, j} exists
+            edge_ij = tuple(sorted((node_i, node_j)))
+            if edge_ij not in edge_set:
+                continue # not even a path i, j
+            for k_idx in range(j_idx + 1, len(node_list)):
+                node_k = node_list[k_idx]
+                # check if unique triple forms a 3-clique
+                edge_ik = tuple(sorted((node_i, node_k)))
+                edge_jk = tuple(sorted((node_j, node_k)))
+                # all pairwise edges exist
+                is_3_clique = (edge_ij in edge_set and
+                               edge_ik in edge_set and
+                               edge_jk in edge_set)
+                if is_3_clique:
+                    # now check if it is a "full triangle"
+                    potential_empty_triangle = tuple(sorted((node_i, node_j, node_k)))
+                    if potential_empty_triangle not in triangle_set:
+                        empty_triangles_found.append(potential_empty_triangle)
+                        print(f"Found an empty triangle: {potential_empty_triangle}")
+                        return False
+    return True   
+
 
 # -----------------------------------------------------------------------------------
 # Scale-free SC (Bianconi, Courtney)
