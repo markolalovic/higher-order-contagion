@@ -24,17 +24,15 @@ def generate_er_sc_components(N_target, p1_initial, p2_triangles):
       - https://arxiv.org/pdf/1810.07031
       - https://github.com/iaciac/simplagion/blob/master/utils_simplagion_on_RSC.py
 
-    NOTE: we allow for the presence of 3-cliques which are not 2-simplices, 
-    i.e. simplicial complexes having both "empty" and "full" triangles.
+    NOTE: we allow for the presence of 3-cliques which are not 2-simplices, i.e. both "empty" and "full" triangles.
 
     Algorithm to generates Erdos-Renyi like simplicial complex:
       - First, creates G(N, p1_initial) random graph
       - Then goes over all possible triples and adds them as 2-simplices (triangles)
        with probability p2_triangles
-        * If 2-simplex {i, j, k} is added, it ensures its faces (edges {i,j}, {j,k}, {i,k})
-       are also added, NOTE: here using sets
+        * If 2-simplex {i, j, k} is added, it ensures its faces (edges {i,j}, {j,k}, {i,k}) are also added, NOTE: here using sets
         * So faces are added, only if they were not already in the initial G(N, p1_initial)
-     
+    
     Returns the `N_realized`, and SC components: 
       - Unique list of 1-simplices (edges)
       - Unique list of unique 2-simplices (triangles)
