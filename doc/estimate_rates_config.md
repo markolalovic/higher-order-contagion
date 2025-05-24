@@ -1,12 +1,38 @@
-# Setup
+# Experimental setup for rate estimation and network classification
+
+## Goal
+- To estimate pairwise and higher-order infection rates from SIS dynamics on various higher-order networks 
+- And to distinguish network structures based on the shapes of these estimated rate curves
+
+## General simulation parameters
+- Number of nodes: `N = 1000`
+- Initial number of infected: `I0 = 50` (5% of N)
+- Max simulation time: `time_max = 10.0`
+- Number of Gillespie runs: `nruns = 100` (`= nsims`)
+- Recovery rate `mu = 1.0`
+- Target steady state: `0.75 N` within `time_max`
+
 ```python
 N = 1000
 I0 = 50
-nsims = 100   # TODO: increase
+
+nsims = 100  # <- increased
 time_max = 10.0
+
+y = int(0.75 * N)
 ```
 
-## Complete
+## Higher-order network classes
+| Structure  | Characteristics | $\beta_1$ | $\beta_2$ |
+|------------|-----------------|-------------|-------------|
+| Complete   | Baseline        | $2.4 / N$   | $4.4 / N^2$ |
+| E-R        | Sparse          | $0.1$       | $1.33$      |
+| Regular    | Homogeneous     | $0.18$      | $1.33$      |
+| Scale-Free | Heterogeneous   | $0.21$      | $0.82$      |
+
+Infection parameters $I_0, \beta_1, \beta_2$ and network parameters such as $d_1, d_2, m$ and $\gamma$ are chosen for each network class (or network instance in case of Scale-free) to achieve an approximate stationary state of $0.75 N$ within the simulation time $0, t_{max} = 10$.
+
+### Complete
 ```python
 name = "Complete"
 test_name = "complete"
@@ -14,7 +40,6 @@ test_name = "complete"
 I0 = 50
 
 beta1 * N = 2.4, beta2 * N^2 = 4.4
-y=int(0.75 * N)
 ```
 
 ## E-R
@@ -37,10 +62,27 @@ d1, d2 = (16, 3)
 
 	Is valid SC: True
 
-lambda1 = 1.6 # <- increase lambda
+lambda1 = 1.6 # <- increased
 lambda2 = 4
 
 beta1 = 0.1000, beta2 = 1.3333
+```
+
+## Regular
+```python
+name = "Regular-HG"
+test_name = "regular"
+d1, d2 = 9, 3
+n = 1000
+# Instance
+	Regular-HG on 1000 nodes with 5500 edges.
+    number of 2-node edges: 4500
+    number of 3-node edges: 1000
+
+lambda1 = 1.6 # <- increased
+lambda2 = 4
+
+beta1 = 0.1778, beta2 = 1.3333
 ```
 
 ## Scale-Free
@@ -78,26 +120,18 @@ max_retries_for_stub_set = N // 100
     PW:  Avg: 8.88, Max: 302.00, 2nd moment: 298.74
     HO:  Avg: 4.70, Max: 219.00, 2nd moment: 116.08
 
-lambda1 = 2.2 # <- increase lambda
 lambda2 = 4.2
-
 
 beta1 = 0.2110, beta2 = 0.8160
 beta1 = 0.2118, beta2 = 0.8052
 beta1 = 0.2479, beta2 = 0.8929
 ```
 
-## Regular
-```python
-d1, d2 = 9, 3
-n = 1000
-# Instance
-	Regular-HG on 1000 nodes with 5500 edges.
-    number of 2-node edges: 4500
-    number of 3-node edges: 1000
-
-lambda1 = 1.6 # <- increase lambda
-lambda2 = 4
-
-beta1 = 0.1778, beta2 = 1.3333
-```
+## Notes: 
+- 100 Gillespie runs provide $10^4$ events expected, sufficient amount data for robust rate estimation even for high-variance cases such as Scale-Free
+- It might be clearer to always report $\beta_1$, $\beta_2$ rates
+- Could plot diagnostics for each structure:
+  * Distribution of $S_{k}^{(1)}, S_{k}^{(2)}$ for each $k$
+  * Correlation between $S_{k}^{(1)}, S_{k}^{(2)}$
+- Edge overlap, could calculate fraction of 3-cliques that are 2-simplices
+- For each structure compute variation coeff $Var[a_K \mid |K| = k] / E[a_K \mid |K|=k]^2$
