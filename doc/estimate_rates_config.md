@@ -23,12 +23,16 @@ y = int(0.75 * N)
 ```
 
 ## Higher-order network classes
-| Structure  | Characteristics | $\beta_1$ | $\beta_2$ |
-|------------|-----------------|-------------|-------------|
-| Complete   | Baseline        | $2.4 / N$   | $4.4 / N^2$ |
-| E-R        | Sparse          | $0.1$       | $1.33$      |
-| Regular    | Homogeneous     | $0.18$      | $1.33$      |
-| Scale-Free | Heterogeneous   | $0.21$      | $0.82$      |
+Table shows the progression from homogeneous to highly heterogeneous structures:
+
+| Hypernetwork  | Avg. PW Degree (Var)    | Avg. HO Degree  (Var)        | $\boldsymbol{\beta_1}$ | $\boldsymbol{\beta_2}$    | PW CV $= \sigma / \mu$ | HO CV $= \sigma / \mu$ |
+|---------------|-------------------------|------------------------------|------------------------|---------------------------|---------------------|---------------------------|
+| Complete      | $N-1 = 999$             | $\binom{N - 1}{2} = 498,501$ | $2.4 / N = 0.0024$     | $4.4 / N^2 = 4.4 10^{-6}$ | 0                   | 0                         |
+| Regular       | 9                       | 3                            | $0.18$                 | $1.33$                    | 0                   | 0                   |
+| E-R           | $16.21 \, (21.62)$      | $3.10 \, (2.89)$             | $0.1$                  | $1.33$                    | 0.29                |  0.55               |
+| Scale-Free    | $9.46 \, (157.25)$      | $4.87 \, (48.58)$            | $0.21$                 | $0.82$                    | 1.32                |  1.43               |
+
+(Added a coefficient of variation (CV) column as a single measure of heterogeneity.)
 
 Infection parameters $I_0, \beta_1, \beta_2$ and network parameters such as $d_1, d_2, m$ and $\gamma$ are chosen for each network class (or network instance in case of Scale-free) to achieve an approximate stationary state of $0.75 N$ within the simulation time $0, t_{max} = 10$.
 
