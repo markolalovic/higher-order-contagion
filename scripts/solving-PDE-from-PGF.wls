@@ -10,13 +10,7 @@ specified for the direction of independent variable s.
 Artificial boundary effects may be present in the solution.
 ```
 
-But solution seems to be correct:
-```mathematica
-Check sum p_k over all k at t_max / 2 is 1:
-g(1, tMax/2) = 1.
-```
-
-And it matches solution from `p(t) = e^{Q t} p0` (see: `expected-values-varying-N-1.pdf`).
+Solution doesn't rise to 70 as in `expected-values-varying-N-4.pdf`.
 
 *)
 
@@ -24,17 +18,17 @@ ClearAll["Global`*"]
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
-figurePath = "../figures/solutions-pde-from-pgf/solving-pde-from-pgf-1.pdf";
+figurePath = "../figures/solutions_pde_from_pgf/solution_from_PGF_PDE.pdf";
 
 (* --- Setup --- *)
-Nval = 6;   (* number of nodes *)
-I0 = 1;     (* initial infected *)
+Nval = 100;   (* number of nodes *)
+I0 = 5;       (* initial infected *)
 
-beta1 = 2.0 / Nval; 
-beta2 = 4.0 / Nval^2;
+beta1 = 2.4 / Nval; 
+beta2 = 4.4 / Nval^2;
 mu = 1;
 
-tMax = 10;
+tMax = 10.0;
 
 Print["N = ", Nval, ", I0 = ", I0, " beta1 = ", beta1, ", beta2 = ", beta2, ", mu = ", mu, ", tMax = ", tMax];
 
@@ -62,13 +56,13 @@ dgds[s_, t_] = D[gSol[s, t], s];
 expectedValueFunction[t_] := dgds[1, t];
 
 (* And plot them *)
-pltLabel = Row[{"Expected values from PGF, with N = ", Nval, ", I0 = ", I0, ", mu = 1, beta1 = 2 / N, beta2 = 4 / N^2"}];
+pltLabel = Row[{"Expected values for N = ", Nval, ", I0 = ", I0, ", mu = 1, beta1 = 2.4 / N, beta2 = 4.4 / N^2"}];
 plotExpValFromPGF = Plot[expectedValueFunction[t], {t, 0, tMax},
   AxesLabel -> {"Time t", "E[X(t)]"},
   PlotLabel -> pltLabel,
   GridLines -> Automatic,
   ImageSize -> Large,
-  PlotRange -> {0, 1.6} (* y-axis should start at 0 *)  
+  PlotRange -> {0, Nval} (* y-axis should start at 0 *)
 ];
 (* plotExpValFromPGF *)
 Export[figurePath, plotExpValFromPGF];
