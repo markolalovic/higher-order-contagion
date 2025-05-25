@@ -63,8 +63,13 @@ def calculate_estimates(X_sims, N, min_Tk_threshold=1e-9):
     
     # Returns full M = N + 1 length arrays a_k_hat, b_k_hat, ...
 
+    NOTE:
+      - To get valid_k indices threshold using Tk:
+
+       `valid_k_idx = estimates["T_k"] > min_Tk_threshold`
+
     TODO:
-      - Add the means and StdDevs for a_k, b_k, lambda_k
+      - tune min_Tk_threshold, 1e-9, ..., 1e-6
     """
     # initialize the aggregated stats
     T_k = np.zeros(N + 1, dtype=np.float64) # time spent in states k
@@ -110,18 +115,14 @@ def calculate_estimates(X_sims, N, min_Tk_threshold=1e-9):
     # c_k_hat = np.full(N + 1, np.nan, dtype=float)    
 
     # --- TODO: collect also the counts ---
-
     for k in range(N + 1):
         if T_k[k] >= min_Tk_threshold:
             a_k_hat[k] = U_k[k] / T_k[k]
             b_k_hat[k] = V_k[k] / T_k[k]
             c_k_hat[k] = D_k[k] / T_k[k]
-        # else estimates remain 0
+        # else estimates remain 0, indicating insufficient data or state not visited
         # else: estimates remain NaN, indicating insufficient data or state not visited
     
-    # to get valid_k indices use Tk
-    # valid_k_idx = estimates["T_k"] > min_Tk_threshold  
-
     lambda_k_hat = a_k_hat + b_k_hat # NaN + number = NaN
     return {
         "a_k_hat": a_k_hat,
