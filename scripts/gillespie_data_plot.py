@@ -29,7 +29,7 @@ if __name__ == "__main__":
     test_names = ["complete", "random_ER", "regular", "scale_free"]
     plot_titles = ["Complete", "Erdős-Rényi", "Regular", "Scale-Free"]
 
-    output_figure_dir = "../figures/results/"
+    output_figure_dir = "../figures/grid_figures/"
     os.makedirs(output_figure_dir, exist_ok=True)
 
     # --- plot a 2x2 grid of subplots ---
