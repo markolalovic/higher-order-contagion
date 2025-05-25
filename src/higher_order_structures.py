@@ -227,12 +227,12 @@ class ErdosRenyiSC(HigherOrderStructure):
             self.d2_realized = 0.0
             self.p1_realized = 0.0
             self.p2_realized = 0.0
-            self.realized_pw_edges = 0
-            self.realized_ho_edges = 0
+            self.num_pw_edges = 0
+            self.num_ho_edges = 0
             return
         
-        self.realized_pw_edges = len(self.get_edges(order=1))
-        self.realized_ho_edges = len(self.get_edges(order=2))
+        self.num_pw_edges = len(self.get_edges(order=1))
+        self.num_ho_edges = len(self.get_edges(order=2))
 
         pw_degrees = [len(self.neighbors(i, 1)) for i in range(self.N)]
         ho_degrees = [len(self.neighbors(i, 2)) for i in range(self.N)]
@@ -241,8 +241,8 @@ class ErdosRenyiSC(HigherOrderStructure):
 
         self.max_pw_edges = comb(self.N, 2)
         self.max_ho_edges = comb(self.N, 3)
-        self.p1_realized = self.realized_pw_edges / self.max_pw_edges
-        self.p2_realized = self.realized_ho_edges / self.max_ho_edges
+        self.p1_realized = self.num_pw_edges / self.max_pw_edges
+        self.p2_realized = self.num_ho_edges / self.max_ho_edges
 
         # using precise p1_initial, p2_triangles
         self.p1_target = self.d1_target / (self.N - 1.0)
@@ -279,8 +279,8 @@ class ErdosRenyiSC(HigherOrderStructure):
         print(f"\tTarget d1: {self.d1_target:.2f}, Realized d1: {self.d1_realized:.2f}")
         print(f"\tTarget d2: {self.d2_target:.2f}, Realized d2: {self.d2_realized:.2f}\n")
 
-        print(f"\tRealized number of pw edges:  {self.realized_pw_edges}/{self.max_pw_edges}")
-        print(f"\tRealized number of ho edges:  {self.realized_ho_edges}/{self.max_ho_edges}\n")
+        print(f"\tRealized number of pw edges:  {self.num_pw_edges}/{self.max_pw_edges}")
+        print(f"\tRealized number of ho edges:  {self.num_ho_edges}/{self.max_ho_edges}\n")
 
         # additional stats
         print(f"\tMean (SD) PW: {self.d1_realized:.2f} ({self.pw_std:.2f})")
