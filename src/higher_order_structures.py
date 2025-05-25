@@ -221,16 +221,7 @@ class ErdosRenyiSC(HigherOrderStructure):
         self.calculate_properties()
 
     def calculate_properties(self):
-        r""" Helper to calculate realized degrees and probabilities. """
-        if self.N == 0:
-            self.d1_realized = 0.0
-            self.d2_realized = 0.0
-            self.p1_realized = 0.0
-            self.p2_realized = 0.0
-            self.num_pw_edges = 0
-            self.num_ho_edges = 0
-            return
-        
+        r""" Helper to calculate realized degrees and probabilities. """        
         self.num_pw_edges = len(self.get_edges(order=1))
         self.num_ho_edges = len(self.get_edges(order=2))
 
