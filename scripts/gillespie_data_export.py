@@ -1,4 +1,4 @@
-# ./scripts/export_gillespie_data.py
+# ./scripts/gillespie_data_export.py
 import numpy as np
 import pandas as pd
 import pickle
