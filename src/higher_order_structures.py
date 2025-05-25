@@ -69,10 +69,26 @@ class HigherOrderStructure:
             e.g., order=1 edges are 2-node or pairwise edges. """
         return [edge for edge in self.edges if len(edge) == (order + 1)]
 
+    def is_sc_valid(self):
+        r""" Checks for downward closure property for all 2-simplices. """
+        edge_set = set()
+        for edge in self.get_edges(order=1):
+            edge_set.add(tuple(sorted(edge)))
+
+        for triangle in self.get_edges(order=2):
+            v1, v2, v3 = triangle
+            if not (tuple(sorted((v1, v2))) in edge_set and
+                    tuple(sorted((v1, v3))) in edge_set and
+                    tuple(sorted((v2, v3))) in edge_set):
+                print(f"Downward closure violated!")
+                return False
+        return True
+    
     def print(self):
         print(f"\t{self.name} on {self.N} nodes with {len(self.edges)} edges.\n")
 
     def summary(self):
+        r""" For testing purposes. """
         print(f"\t Graph name: {self.name}")
         print(f"\t Number of nodes N = {self.N}")
         
@@ -161,7 +177,6 @@ class RandomHypergraph(HigherOrderStructure):
                 edges_list.append(ho_edge)
         return edges_list
 
-
 class ErdosRenyiSC(HigherOrderStructure):
     r"""
     Erdos-Renyi like simplicial complex on `N` nodes.
@@ -203,9 +218,9 @@ class ErdosRenyiSC(HigherOrderStructure):
         all_simplices.extend(triangles)
         self.set_edges(all_simplices) # calculates memo_nbs
 
-        self.calculate_realized_properties()
+        self.calculate_properties()
 
-    def calculate_realized_properties(self):
+    def calculate_properties(self):
         r""" Helper to calculate realized degrees and probabilities. """
         if self.N == 0:
             self.d1_realized = 0.0
@@ -229,53 +244,58 @@ class ErdosRenyiSC(HigherOrderStructure):
         self.p1_realized = self.realized_pw_edges / self.max_pw_edges
         self.p2_realized = self.realized_ho_edges / self.max_ho_edges
 
-        self.calculate_expected_p1_overall()
-        self.p1_edges = self.calculate_expected_p1_overall()
-
-        # using precise p1_initial, p2_triangles, the properties simplify
-        # TODO: check that means of realized p1, p2 equal targets p1, p2
+        # using precise p1_initial, p2_triangles
         self.p1_target = self.d1_target / (self.N - 1.0)
         self.p2_target = (2.0 * self.d2_target) / ((self.N - 1.0) * (self.N - 2.0))
-
-    def calculate_expected_p1_overall(self):
-        r"""
-        Calculates expected overall probability of a pairwise edge existing in ErdosRenyiSC.
-        """
-        # prob that (u, v) is not formed by any of the N - 2 triangles involving u,v
-        prob_no_triangle_forms_uv = (1.0 - self.p2_triangles)**(self.N - 2)
-        # prob that (u, v) is formed by at least one triangle
-        prob_triangle_forms_uv = 1.0 - prob_no_triangle_forms_uv
-        expected_p1 = self.p1_initial + (1.0 - self.p1_initial) * prob_triangle_forms_uv
-        return expected_p1
     
-    def is_sc_valid(self):
-        r""" Checks for downward closure property for all 2-simplices. """
-        edge_set = set()
-        for edge in self.get_edges(order=1):
-            edge_set.add(tuple(sorted(edge)))
+        # additional statistics
+        self.pw_std = np.std(pw_degrees)
+        self.ho_std = np.std(ho_degrees)
+        
+        self.pw_cv = self.pw_std / self.d1_realized
+        self.ho_cv = self.ho_std / self.d2_realized
+        
+        self.pw_var = np.var(pw_degrees)
+        self.ho_var = np.var(ho_degrees)
+        
+        self.pw_2nd_moment = self.pw_var + self.d1_realized**2
+        self.ho_2nd_moment = self.ho_var + self.d2_realized**2
+        
+        self.pw_min = np.min(pw_degrees)
+        self.pw_max = np.max(pw_degrees)
+        self.ho_min = np.min(ho_degrees)
+        self.ho_max = np.max(ho_degrees)
 
-        for triangle in self.get_edges(order=2):
-            v1, v2, v3 = triangle
-            if not (tuple(sorted((v1, v2))) in edge_set and
-                    tuple(sorted((v1, v3))) in edge_set and
-                    tuple(sorted((v2, v3))) in edge_set):
-                print(f"Downward closure violated!")
-                return False
-        return True
 
-    def summary(self):
-        # super().summary()
+    def properties(self):
+        # NOTE: checked and commented out to speed-up
+        # print(f"\tIs valid SC: {self.is_sc_valid()}\n")
+        
+        # print(f"\tInitial p_G used for G(N, p_G): {self.p1_initial:.8f}\n")
+        
+        # print(f"\tTarget p1:  {self.p1_target:.8f}, Realized p1: {self.p1_realized:.8f}")
+        # print(f"\tTarget p2:  {self.p2_target:.8f}, Realized p2: {self.p2_realized:.8f}\n")
+
         print(f"\tTarget d1: {self.d1_target:.2f}, Realized d1: {self.d1_realized:.2f}")
         print(f"\tTarget d2: {self.d2_target:.2f}, Realized d2: {self.d2_realized:.2f}\n")
-
-        print(f"\tTarget p1:  {self.p1_target:.8f}, Realized p1: {self.p1_realized:.8f}")
-        print(f"\tTarget p2:  {self.p2_target:.8f}, Realized p2: {self.p2_realized:.8f}\n")
-
-        print(f"\tInitial p_G used for G(N, p_G): {self.p1_initial:.8f}\n")
 
         print(f"\tRealized number of pw edges:  {self.realized_pw_edges}/{self.max_pw_edges}")
         print(f"\tRealized number of ho edges:  {self.realized_ho_edges}/{self.max_ho_edges}\n")
 
-        print(f"\tIs valid SC: {self.is_sc_valid()}") # TODO: checked and commented out to speed-up
+        # additional stats
+        print(f"\tMean (SD) PW: {self.d1_realized:.2f} ({self.pw_std:.2f})")
+        print(f"\tMean (SD) HO: {self.d2_realized:.2f} ({self.ho_std:.2f})\n")
+
+        print(f"\tMean (Var) PW: {self.d1_realized:.2f} ({self.pw_var:.2f})")
+        print(f"\tMean (Var) HO: {self.d2_realized:.2f} ({self.ho_var:.2f})\n")
+
+        print(f"\t2nd moment PW: {self.pw_2nd_moment:.2f}")
+        print(f"\t2nd moment HO: {self.ho_2nd_moment:.2f}\n")
+
+        print(f"\tCV (SD/Mean) PW: {self.pw_cv:.2f}")
+        print(f"\tCV (SD/Mean) HO: {self.ho_cv:.2f}\n")
+
+        print(f"\tMin, Max PW: {self.pw_min:.0f}, {self.pw_max:.0f}")
+        print(f"\tMin, Max HO: {self.ho_min:.0f}, {self.ho_max:.0f}\n")        
         print("\n")
 
