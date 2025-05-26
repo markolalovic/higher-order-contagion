@@ -60,10 +60,11 @@ def di_lauro_bk_model(k, N_val, C_b, p_b, alpha_b):
     return rate
 
 if __name__ == "__main__":
+    # setup
     N = 1000
     k_full_range = np.arange(N + 1)
-    
-    # true parameters for complete for actual rates a_k, b_k, lambda_k
+
+    # complete class true parameters for for actual rates a_k, b_k, lambda_k
     true_beta1_for_complete = 2.4 / N
     true_beta2_for_complete = 4.4 / (N**2)
 
@@ -82,8 +83,8 @@ if __name__ == "__main__":
         "regular": "^",
         "scale_free": "D"
     }
-    marker_size = 20
-    marker_alpha = 0.8
+    marker_size = 50
+    marker_alpha = 0.85
 
     plot_labels = {
         "complete": "Complete", 
@@ -92,16 +93,16 @@ if __name__ == "__main__":
         "scale_free": "Scale-Free"
     }
 
+    fig_output_dir = os.path.join(project_root, 'figures', 'combined', 'fits')
+    os.makedirs(fig_output_dir, exist_ok=True)
+
     # --- 3 figures of combined plots for all 4 classes ---
     fig_ak, ax_ak = plt.subplots(figsize=(8, 6))
     fig_bk, ax_bk = plt.subplots(figsize=(8, 6))
     fig_lk, ax_lk = plt.subplots(figsize=(8, 6))
 
-    fig_output_dir = os.path.join(project_root, 'figures', 'grid_figures', 'fits')
-    os.makedirs(fig_output_dir, exist_ok=True)
-
     for test_name in test_names:
-        print(f"\n--- Processing Network Class: {test_name} ---")
+        print(f"\n --- Class: {test_name} --- ")
         estimates_path = os.path.join(project_root, 'results', 'estimates', f'{test_name}.npz')
         estimates = np.load(estimates_path, allow_pickle=True)
 
@@ -110,17 +111,31 @@ if __name__ == "__main__":
         lambda_k_tilde_all = estimates["lambda_k_tilde"]
         T_k_all = estimates["T_k"]
 
-        min_Tk_threshold = 0.1
+        # min_Tk_threshold = 0.1 # TODO: tune it
+        min_Tk_threshold = 1e-6 # TODO: tune it
         valid_k_idx = T_k_all > min_Tk_threshold
         
         k_observed_reliable = k_full_range[valid_k_idx]
         ak_tilde_reliable = a_k_tilde_all[valid_k_idx]
         bk_tilde_reliable = b_k_tilde_all[valid_k_idx]
         lambda_k_tilde_reliable = lambda_k_tilde_all[valid_k_idx]
-
         print(f"Number of reliable data points for fitting: {len(k_observed_reliable)}")
 
+        # --------------------------------------------------------------------------------
+        # Sample from ak_tilde_reliable, bk_tilde_reliable, lambda_k_tilde_reliable
+        # --------------------------------------------------------------------------------
+        sample_size = 25 # TODO: 25 or 10, a number that looks good on the plot
+        # sample equally spaced indices to from the reliable data
+        sample_indices = np.linspace(0, len(k_observed_reliable) - 1, sample_size, dtype=int)
+        k_scatter = k_observed_reliable[sample_indices]
+        ak_tilde_sample = ak_tilde_reliable[sample_indices]
+        bk_tilde_sample = bk_tilde_reliable[sample_indices]
+        lambda_k_tilde_sample = lambda_k_tilde_reliable[sample_indices]
+
         # default black color and dot marker
+        default_color = "black"
+        default_marker = "."
+
         current_color = class_colors.get(test_name, "black")
         current_marker = class_markers.get(test_name, ".")
 
@@ -139,7 +154,7 @@ if __name__ == "__main__":
         popt_ak, _ = curve_fit(lambda k, C, p, alpha: di_lauro_ak_model(k, N, C, p, alpha),
                             k_observed_reliable, ak_tilde_reliable, p0=p0_ak, bounds=bounds_ak, maxfev=10000)
         ak_fitted = di_lauro_ak_model(k_full_range, N, *popt_ak)
-        print(f"a_k fit params ({test_name}): C={popt_ak[0]:.2e}, p={popt_ak[1]:.2f}, alpha={popt_ak[2]:.2f}")
+        print(f"\na_k fit params ({test_name}): C={popt_ak[0]:.2e}, p={popt_ak[1]:.2f}, alpha={popt_ak[2]:.2f}")
         
         # --------------------
         # --- HO rates b_k ---
@@ -174,33 +189,22 @@ if __name__ == "__main__":
         # --- Plotting ---
         # --- -------- ---
         # skipping labels for fits: label=f'{plot_labels[test_name]}'
-        # TODO: sample from ak_tilde_reliable, bk_tilde_reliable, lambda_k_tilde_reliable
-        num_scatter_points = 25 # Or 30, choose a number that looks good on the plot
-
-        # Create equally spaced indices to select from the reliable data
-        # This ensures we get points spanning the whole range of reliable data
-        sample_indices = np.linspace(0, len(k_observed_reliable) - 1, num_scatter_points, dtype=int)
-
-        k_scatter = k_observed_reliable[sample_indices]
-        ak_tilde_scatter = ak_tilde_reliable[sample_indices]
-        bk_tilde_scatter = bk_tilde_reliable[sample_indices]
-        lambda_k_tilde_scatter = lambda_k_tilde_reliable[sample_indices]
 
         # a_k plot
-        ax_ak.scatter(k_scatter, ak_tilde_scatter, label=f'{plot_labels[test_name]}', 
-                      alpha=marker_alpha, s=marker_size, color=current_color, marker=current_marker)
-        ax_ak.plot(k_full_range, ak_fitted, color=current_color, linewidth=1.5)
+        ax_ak.plot(k_full_range, ak_fitted, color=default_color, linewidth=1.5)
+        ax_ak.scatter(k_scatter, ak_tilde_sample, label=f'{plot_labels[test_name]}', 
+                        alpha=marker_alpha, s=marker_size, color=current_color, marker=current_marker, zorder=10)
 
         # b_k plot
-        ax_bk.scatter(k_scatter, bk_tilde_scatter, label=f'{plot_labels[test_name]}', 
-                      alpha=marker_alpha, s=marker_size, color=current_color, marker=current_marker)
-        ax_bk.plot(k_full_range, bk_fitted, color=current_color, linewidth=1.5)
-
+        ax_bk.plot(k_full_range, bk_fitted, color=default_color, linewidth=1.5)
+        ax_bk.scatter(k_scatter, bk_tilde_sample, label=f'{plot_labels[test_name]}', 
+                        alpha=marker_alpha, s=marker_size, color=current_color, marker=current_marker, zorder=10)
+        
         # lambda_k plot
-        ax_lk.scatter(k_scatter, lambda_k_tilde_scatter, label=f'{plot_labels[test_name]}', 
-                      alpha=marker_alpha, s=marker_size, color=current_color, marker=current_marker)
-        ax_lk.plot(k_full_range, lambda_k_fitted, color=current_color, linewidth=1.5)
-
+        ax_lk.plot(k_full_range, lambda_k_fitted, color=default_color, linewidth=1.5)
+        ax_lk.scatter(k_scatter, lambda_k_tilde_sample, label=f'{plot_labels[test_name]}', 
+                        alpha=marker_alpha, s=marker_size, color=current_color, marker=current_marker, zorder=10)
+        
     # --- ---------- ---
     # --- Figure a_k ---
     # --- ---------- ---
@@ -208,7 +212,6 @@ if __name__ == "__main__":
     #     # for complete we can add true theoretical curve
     #     a_k_true_comp = true_beta1_for_complete * k_full_range * (N - k_full_range)
     #     ax_ak.plot(k_full_range, a_k_true_comp, label='ak_true (Complete)', color='black', linestyle=':', linewidth=1.5, zorder=0)
-    
     ax_ak.set_xlabel("Number of Infected (k)")
     ax_ak.set_ylabel("Rate")
     ax_ak.set_title(f"Pairwise Rate a_k (N = {N})")
@@ -221,9 +224,9 @@ if __name__ == "__main__":
     fig_ak.savefig(os.path.join(fig_output_dir, "fits_a_k.pdf"), bbox_inches='tight')
     plt.close(fig_ak)
 
-    # --- ---------- ---
+    # ------------------
     # --- Figure b_k ---
-    # --- ---------- ---
+    # ------------------
     # if test_name == "complete":
     #     # for complete we can add true theoretical curve
     #     binom_k_2 = np.zeros_like(k_full_range, dtype=float)
@@ -243,7 +246,9 @@ if __name__ == "__main__":
     fig_bk.savefig(os.path.join(fig_output_dir, "fits_b_k.pdf"), bbox_inches='tight')
     plt.close(fig_bk)
 
+    # -----------------------
     # --- Figure lambda_k ---
+    # -----------------------
     # if test_name == "complete":
     #     # for complete we can add true theoretical curve
     #     lambda_k_true_comp = a_k_true_comp + b_k_true_comp
@@ -261,3 +266,29 @@ if __name__ == "__main__":
     plt.close(fig_lk)
 
     print("\nDone.")
+
+
+'''
+a_k fit params (complete): C=2.40e-03, p=1.00, alpha=0.00
+b_k fit params (complete): C=2.20e-06, p=1.00, alpha=0.00
+
+ --- Class: random_ER ---
+Number of reliable data points for fitting: 742
+
+a_k fit params (random_ER): C=1.82e-03, p=0.98, alpha=-0.07
+b_k fit params (random_ER): C=3.82e-05, p=0.80, alpha=-0.23
+
+ --- Class: regular ---
+Number of reliable data points for fitting: 772
+
+a_k fit params (regular): C=1.54e-03, p=1.00, alpha=0.08
+b_k fit params (regular): C=3.89e-05, p=0.80, alpha=0.13
+
+ --- Class: scale_free ---
+Number of reliable data points for fitting: 732
+
+a_k fit params (scale_free): C=3.13e-02, p=0.77, alpha=-0.61
+b_k fit params (scale_free): C=1.09e-02, p=0.36, alpha=-1.03
+
+Done.
+'''
