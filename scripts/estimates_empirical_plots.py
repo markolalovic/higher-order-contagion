@@ -1,4 +1,10 @@
 # ./scripts/estimates_empirical_plots.py
+# produces 3 figures: 
+#   * `./figures/combined/estimates/empirical_a_k.pdf`
+#   * `./figures/combined/estimates/empirical_b_k.pdf`
+#   * `./figures/combined/estimates/empirical_lambda_k.pdf`
+# of empirical estimates scattered on top of fitted rate curves
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd

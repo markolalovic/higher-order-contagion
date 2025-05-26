@@ -1,4 +1,6 @@
 # ./scripts/gillespie_data_plot.py
+# saves figure: `./figures/combined/gillespie_runs_all_classes.pdf`
+
 import matplotlib.pylab as plt
 import numpy as np
 import pandas as pd

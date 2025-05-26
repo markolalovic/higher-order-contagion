@@ -1,4 +1,7 @@
 # ./scripts/estimates_MLEs_plots.py
+# produces 4 figures for each class: `./figures/combined/estimates/MLEs_{test_name}.pdf
+# of a_k_hats, b_k_hats estimates scattered on top of fitted rate curves
+ 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd

@@ -1,4 +1,7 @@
 # ./scripts/fit_rate_curves.py
+# fits rate curves given many empirical estimates
+# script for testing, no need to run
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -176,8 +179,8 @@ if __name__ == "__main__":
     ax_ak.set_yticklabels([]) # TODO: decide y-axis tick labels (the numbers) should be there or not
     ax_ak.set_yticks([])
     # save and close
-    fig_ak.savefig(os.path.join(fig_output_dir, "fits_a_k.pdf"), bbox_inches='tight')
-    plt.close(fig_ak)
+    # fig_ak.savefig(os.path.join(fig_output_dir, "fits_a_k.pdf"), bbox_inches='tight')
+    # plt.close(fig_ak)
 
     # ------------------
     # --- Figure b_k ---
@@ -198,8 +201,8 @@ if __name__ == "__main__":
     ax_bk.set_yticklabels([]) # TODO: decide y-axis tick labels (the numbers) should be there or not
     ax_bk.set_yticks([])
     # save and close
-    fig_bk.savefig(os.path.join(fig_output_dir, "fits_b_k.pdf"), bbox_inches='tight')
-    plt.close(fig_bk)
+    # fig_bk.savefig(os.path.join(fig_output_dir, "fits_b_k.pdf"), bbox_inches='tight')
+    # plt.close(fig_bk)
 
     # -----------------------
     # --- Figure lambda_k ---
@@ -217,8 +220,8 @@ if __name__ == "__main__":
     ax_lk.set_yticklabels([]) # TODO: decide y-axis tick labels (the numbers) should be there or not
     ax_lk.set_yticks([])
     # save and close
-    fig_lk.savefig(os.path.join(fig_output_dir, "fits_lambda_k.pdf"), bbox_inches='tight')
-    plt.close(fig_lk)
+    # fig_lk.savefig(os.path.join(fig_output_dir, "fits_lambda_k.pdf"), bbox_inches='tight')
+    # plt.close(fig_lk)
 
     print("\nDone.")
 

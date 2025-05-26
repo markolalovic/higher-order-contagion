@@ -1,4 +1,7 @@
 # ./scripts/gillespie_data_export.py
+# saves `./data/gillespie_sims/{test_name}/continuous_observations_{sample_number}.csv`
+# and `./data/gillespie_sims/{test_name}/average_curve_{num_samples}.csv`
+
 import numpy as np
 import pandas as pd
 import pickle

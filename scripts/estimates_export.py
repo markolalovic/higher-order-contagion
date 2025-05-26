@@ -1,3 +1,7 @@
+# ./scripts/estimates_export.py
+# saves `./data/estimates/estimates_{test_name}.csv
+# with MLEs, empirical tildes, and fitted rate curves
+
 import numpy as np
 import pandas as pd
 import os
