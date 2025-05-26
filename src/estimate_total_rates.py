@@ -207,3 +207,48 @@ def estimate_em_3(t_data_bd, p_data_bd, p0_guess, p_bounds):
     print(f"Log-likelihood: {est_em_custom.val}")
     print(f"Compute time: {est_em_custom.compute_time:.0f} seconds")    
     return est_em_custom
+
+def di_lauro_ak_model(k, N_val, C_a, p_a, alpha_a):
+    r"""
+    Model fit for pairwise rates a_k, based on:
+    Di Lauro et al. "Network inference from population-level observation of epidemics." 
+    Scientific Reports 10.1 (2020): 18779.
+    """
+    k_arr = np.asarray(k, dtype=float)
+    rate = np.zeros_like(k_arr)
+    inner_idx = (k_arr > 1e-9) & (k_arr < N_val - 1e-9)
+    if np.any(inner_idx):
+        k_in = k_arr[inner_idx]
+        term_k = np.maximum(1e-9, k_in)
+        term_N_minus_k = np.maximum(1e-9, N_val - k_in)
+        boundary_shape = (term_k**p_a) * (term_N_minus_k**p_a)
+        norm_factor = N_val / 2.0
+        skew_exponent = alpha_a * (k_in - norm_factor) / (norm_factor if abs(norm_factor) > 1e-9 else 1.0)
+        skew_term = np.exp(skew_exponent)
+        rate[inner_idx] = np.abs(C_a) * boundary_shape * skew_term
+    rate[k_arr <= 1e-9] = 0.0
+    rate[k_arr >= N_val - 1e-9] = 0.0
+    return rate
+
+def di_lauro_bk_model(k, N_val, C_b, p_b, alpha_b):
+    r"""
+    Generalized model fit for higher-order rates b_k, based on:
+    Di Lauro et al. "Network inference from population-level observation of epidemics." 
+    Scientific Reports 10.1 (2020): 18779.
+    """
+    k_arr = np.asarray(k, dtype=float)
+    rate = np.zeros_like(k_arr)
+    inner_idx = (k_arr > 1.0 + 1e-9) & (k_arr < N_val - 1e-9)
+    if np.any(inner_idx):
+        k_in = k_arr[inner_idx]
+        term_k = np.maximum(1e-9, k_in)
+        term_k_minus_1 = np.maximum(1e-9, k_in - 1)
+        term_N_minus_k = np.maximum(1e-9, N_val - k_in)
+        boundary_shape = term_k * (term_k_minus_1**p_b) * (term_N_minus_k**p_b)
+        norm_factor = N_val / 2.0
+        skew_exponent = alpha_b * (k_in - norm_factor) / (norm_factor if abs(norm_factor) > 1e-9 else 1.0)
+        skew_term = np.exp(skew_exponent)
+        rate[inner_idx] = np.abs(C_b) * boundary_shape * skew_term
+    rate[k_arr <= 1.0 + 1e-9] = 0.0
+    rate[k_arr >= N_val - 1e-9] = 0.0
+    return rate

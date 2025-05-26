@@ -11,53 +11,9 @@ src_path = os.path.join(project_root, 'src')
 if src_path not in sys.path:
     sys.path.insert(0, src_path)
 
+from estimate_total_rates import di_lauro_ak_model, di_lauro_bk_model
 from scipy.special import comb as nchoosek
 from scipy.optimize import curve_fit
-
-def di_lauro_ak_model(k, N_val, C_a, p_a, alpha_a):
-    r"""
-    Model fit for pairwise rates a_k, based on:
-    Di Lauro et al. "Network inference from population-level observation of epidemics." 
-    Scientific Reports 10.1 (2020): 18779.
-    """
-    k_arr = np.asarray(k, dtype=float)
-    rate = np.zeros_like(k_arr)
-    inner_idx = (k_arr > 1e-9) & (k_arr < N_val - 1e-9)
-    if np.any(inner_idx):
-        k_in = k_arr[inner_idx]
-        term_k = np.maximum(1e-9, k_in)
-        term_N_minus_k = np.maximum(1e-9, N_val - k_in)
-        boundary_shape = (term_k**p_a) * (term_N_minus_k**p_a)
-        norm_factor = N_val / 2.0
-        skew_exponent = alpha_a * (k_in - norm_factor) / (norm_factor if abs(norm_factor) > 1e-9 else 1.0)
-        skew_term = np.exp(skew_exponent)
-        rate[inner_idx] = np.abs(C_a) * boundary_shape * skew_term
-    rate[k_arr <= 1e-9] = 0.0
-    rate[k_arr >= N_val - 1e-9] = 0.0
-    return rate
-
-def di_lauro_bk_model(k, N_val, C_b, p_b, alpha_b):
-    r"""
-    Generalized model fit for higher-order rates b_k, based on:
-    Di Lauro et al. "Network inference from population-level observation of epidemics." 
-    Scientific Reports 10.1 (2020): 18779.
-    """
-    k_arr = np.asarray(k, dtype=float)
-    rate = np.zeros_like(k_arr)
-    inner_idx = (k_arr > 1.0 + 1e-9) & (k_arr < N_val - 1e-9)
-    if np.any(inner_idx):
-        k_in = k_arr[inner_idx]
-        term_k = np.maximum(1e-9, k_in)
-        term_k_minus_1 = np.maximum(1e-9, k_in - 1)
-        term_N_minus_k = np.maximum(1e-9, N_val - k_in)
-        boundary_shape = term_k * (term_k_minus_1**p_b) * (term_N_minus_k**p_b)
-        norm_factor = N_val / 2.0
-        skew_exponent = alpha_b * (k_in - norm_factor) / (norm_factor if abs(norm_factor) > 1e-9 else 1.0)
-        skew_term = np.exp(skew_exponent)
-        rate[inner_idx] = np.abs(C_b) * boundary_shape * skew_term
-    rate[k_arr <= 1.0 + 1e-9] = 0.0
-    rate[k_arr >= N_val - 1e-9] = 0.0
-    return rate
 
 if __name__ == "__main__":
     # setup
@@ -269,26 +225,28 @@ if __name__ == "__main__":
 
 
 '''
+Results:
+
 a_k fit params (complete): C=2.40e-03, p=1.00, alpha=0.00
 b_k fit params (complete): C=2.20e-06, p=1.00, alpha=0.00
 
  --- Class: random_ER ---
-Number of reliable data points for fitting: 742
+Number of reliable data points for fitting: 766
 
-a_k fit params (random_ER): C=1.82e-03, p=0.98, alpha=-0.07
-b_k fit params (random_ER): C=3.82e-05, p=0.80, alpha=-0.23
+a_k fit params (random_ER): C=1.85e-03, p=0.98, alpha=-0.07
+b_k fit params (random_ER): C=2.73e-05, p=0.83, alpha=-0.24
 
  --- Class: regular ---
-Number of reliable data points for fitting: 772
+Number of reliable data points for fitting: 787
 
-a_k fit params (regular): C=1.54e-03, p=1.00, alpha=0.08
-b_k fit params (regular): C=3.89e-05, p=0.80, alpha=0.13
+a_k fit params (regular): C=1.53e-03, p=1.00, alpha=0.08
+b_k fit params (regular): C=3.17e-05, p=0.81, alpha=0.13
 
  --- Class: scale_free ---
-Number of reliable data points for fitting: 732
+Number of reliable data points for fitting: 753
 
-a_k fit params (scale_free): C=3.13e-02, p=0.77, alpha=-0.61
-b_k fit params (scale_free): C=1.09e-02, p=0.36, alpha=-1.03
+a_k fit params (scale_free): C=3.01e-02, p=0.77, alpha=-0.60
+b_k fit params (scale_free): C=1.13e-02, p=0.36, alpha=-1.02
 
 Done.
 '''
