@@ -145,7 +145,6 @@ if __name__ == "__main__":
         # --- Plotting ---
         # --- -------- ---
         # skipping labels for fits: label=f'{plot_labels[test_name]}'
-
         # a_k plot
         ax_ak.plot(k_full_range, ak_fitted, color=default_color, linewidth=1.5)
         ax_ak.scatter(k_scatter, ak_tilde_sample, label=f'{plot_labels[test_name]}', 
