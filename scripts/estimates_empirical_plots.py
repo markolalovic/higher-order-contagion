@@ -1,4 +1,4 @@
-# ./scripts/estimates_plot.py
+# ./scripts/estimates_empirical_plots.py
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -13,7 +13,11 @@ if __name__ == "__main__":
     current_script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root_dir = os.path.dirname(current_script_dir)
 
+    
     test_names = ["complete", "random_ER", "regular", "scale_free"]
+    # reverse it, to plot complete, random_ER, ... zorder on top
+    test_names = list(reversed(test_names))
+
     # TODO: choose colors for each class
     class_colors = {
         "complete":   "red",
@@ -40,9 +44,8 @@ if __name__ == "__main__":
     remove_y_ticks_and_labels = True
     sample_size = 25 # TODO: 25 or lower, a number that looks good on the plot
     
-    plot_zero_estimates = True  # to remove near-zero estimates in scatters
+    plot_zero_estimates = False  # to remove near-zero estimates in scatters
     zero_threshold = 1e-9       # and filter values below this
-
 
     plot_labels = {
         "complete": "Complete", 
@@ -52,7 +55,7 @@ if __name__ == "__main__":
     }
 
     csv_input_dir = os.path.join(project_root_dir, 'data', 'estimates')
-    fig_output_dir = os.path.join(project_root_dir, 'figures', 'combined', 'fits')
+    fig_output_dir = os.path.join(project_root_dir, 'figures', 'combined', 'estimates')
     os.makedirs(fig_output_dir, exist_ok=True)
 
     # --- 3 figures of combined plots for all 4 classes ---
@@ -125,7 +128,7 @@ if __name__ == "__main__":
         # ----------------
         # --- Plotting ---
         # --- -------- ---
-        # skipping labels for fits: label=f'{plot_labels[test_name]}'
+        # skipping labels for estimates: label=f'{plot_labels[test_name]}'
         # a_k plot
         ax_ak.plot(k_full_range, ak_fitted, color=default_color_line, linewidth=plt_line_width, alpha=0.7)
         ax_ak.scatter(k_scatter_ak, ak_tilde_sample, label=f'{plot_labels[test_name]}',
@@ -151,12 +154,16 @@ if __name__ == "__main__":
     ax_ak.set_xlabel("Number of Infected (k)")
     ax_ak.set_ylabel("Rate")
     ax_ak.set_title(f"Pairwise Rate a_k (N = {N})")
-    ax_ak.legend(fontsize=plt_font_size, loc=legend_location)
+
+    # reverse the legend b/c of reversed test_names
+    handles_ak, labels_ak = ax_ak.get_legend_handles_labels()
+    ax_ak.legend(handles_ak[::-1], labels_ak[::-1], fontsize=plt_font_size, loc=legend_location)
+
     ax_ak.set_ylim(bottom=0) # Start y-axis at 0
     if remove_y_ticks_and_labels:
         ax_ak.set_yticklabels([])
         ax_ak.set_yticks([])
-    fig_ak.savefig(os.path.join(fig_output_dir, f"fits_a_k{plt_version}.pdf"), bbox_inches='tight')
+    fig_ak.savefig(os.path.join(fig_output_dir, f"empirical_a_k{plt_version}.pdf"), bbox_inches='tight')
     plt.close(fig_ak)
 
     # ------------------
@@ -165,12 +172,16 @@ if __name__ == "__main__":
     ax_bk.set_xlabel("Number of Infected (k)")
     ax_bk.set_ylabel("Rate")
     ax_bk.set_title(f"Higher-Order Rate b_k (N = {N})")
-    ax_bk.legend(fontsize=plt_font_size, loc=legend_location)
+
+    # reverse the legend b/c of reversed test_names
+    handles_bk, labels_bk = ax_bk.get_legend_handles_labels()
+    ax_bk.legend(handles_bk[::-1], labels_bk[::-1], fontsize=plt_font_size, loc=legend_location)
+
     ax_bk.set_ylim(bottom=0)
     if remove_y_ticks_and_labels:
         ax_bk.set_yticklabels([])
         ax_bk.set_yticks([])
-    fig_bk.savefig(os.path.join(fig_output_dir, f"fits_b_k{plt_version}.pdf"), bbox_inches='tight')
+    fig_bk.savefig(os.path.join(fig_output_dir, f"empirical_b_k{plt_version}.pdf"), bbox_inches='tight')
     plt.close(fig_bk)
 
     # -----------------------
@@ -179,12 +190,16 @@ if __name__ == "__main__":
     ax_lk.set_xlabel("Number of Infected (k)")
     ax_lk.set_ylabel("Rate")
     ax_lk.set_title(f"Total Birth Rate lambda_k (N = {N})")
-    ax_lk.legend(fontsize=plt_font_size, loc=legend_location)
+
+    # reverse the legend b/c of reversed test_names
+    handles_lk, labels_lk = ax_lk.get_legend_handles_labels()
+    ax_lk.legend(handles_lk[::-1], labels_lk[::-1], fontsize=plt_font_size, loc=legend_location)
+
     ax_lk.set_ylim(bottom=0)
     if remove_y_ticks_and_labels:    
         ax_lk.set_yticklabels([])
         ax_lk.set_yticks([])
-    fig_lk.savefig(os.path.join(fig_output_dir, f"fits_lambda_k{plt_version}.pdf"), bbox_inches='tight')
+    fig_lk.savefig(os.path.join(fig_output_dir, f"empirical_lambda_k{plt_version}.pdf"), bbox_inches='tight')
     plt.close(fig_lk)
 
     print("\nDone.")
