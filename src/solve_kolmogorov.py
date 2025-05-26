@@ -354,6 +354,47 @@ def calculate_expected_values(sol):
         expected_values[i] = np.sum([k * p_vals[k, i] for k in range(M)])
     return expected_values
 
+def list_all_ODEs_using_estimates(N, ak_hats, bk_hats, mu):
+    r"""
+    Returns the list of forward Kolmogorov equations dp_{k}(t)/dt, given:
+      - Number of nodes N
+      - Estimates of ak and bk
+      - Recovery rate mu 
+    """
+    all_states = list(range(N + 1))
+    M = len(all_states)
+    
+    def ode_system(t, p):
+      r"""Given p = p(t) a vector of length M, returns dp / dt where p[i] is:
+        * In case of complete hypergraph p[i] is simply p[k]:
+          p[i] = p[k] = p_{k}(t) for state_k, such that: all_states[i] = state_k = k
+      """
+      dpdt = np.zeros(M, dtype=float)
+      for k in range(M):
+          if k == 0:
+              dpdt[0] = mu * p[1]
+          elif k == N:
+              # infections from state N - 1, infecting the remaining v
+              infection_rate = ak_hats[N - 1] + bk_hats[N - 1]
+              dpdt[N] += infection_rate * p[N - 1]
+
+              # or no event, that is none of N infected nodes recovers
+              dpdt[N] -= (N * mu) * p[N]
+          else: 
+              # I. infection from state k - 1 to k
+              infection_rate = ak_hats[k - 1] + bk_hats[k - 1]
+              dpdt[k] += infection_rate * p[k - 1]
+
+              # II. recovery from state k + 1 to k
+              dpdt[k] += mu * (k + 1) * p[k + 1]
+
+              # III. no event
+              outflow_rate = ak_hats[k] + bk_hats[k] + mu * k
+              dpdt[k] -= outflow_rate * p[k]
+      return dpdt
+    return ode_system
+
+'''
 def test_on_general():    
     g = example45()
     N = g.number_of_nodes()
@@ -469,3 +510,4 @@ def test_on_complete():
 
 if __name__ == "__main__":
     test_on_complete()
+'''
