@@ -1,5 +1,5 @@
 # ./scripts/kolmogorov_solve_save_fits.py
-# solves kolmogorov forward equations with empirical estimates (tildes) and MLEs (hats) 
+# solves Kolmogorov forward equations with empirical estimates (tildes) and MLEs (hats) 
 # and saves the solutions to: `./data/estimates/kolmogorov_{test_name}.csv`
 
 import numpy as np

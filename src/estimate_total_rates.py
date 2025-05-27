@@ -185,28 +185,28 @@ def calculate_estimates(X_sims, N, beta1_true, beta2_true, min_Tk_threshold=1e-9
         "sum_ho_counts_x_time_k": sum_ho_counts_x_time_k
     }
 
-def complete_birth_rate(z, p):
-    N_fixed = 100 # TODO: write a wrapper
-    k = int(z) # integer state
-    # use these directly without dividing by N or N^2 first
-    beta1_unscaled, beta2_unscaled = p # e.g. p = [2.4, 4.4]
-    
-    rate_a = (beta1_unscaled / N_fixed) * k * (N_fixed - k)
-    rate_b = 0.0
-    if k >= 2:
-        rate_b = (beta2_unscaled / (N_fixed**2)) * comb(k, 2, exact=False) * (N_fixed - k)
-    
-    return max(0.0, rate_a + rate_b)
+def make_complete_birth_rate_for_N(N_val):
+    def complete_birth_rate(z, p):
+        k = int(z)
+        beta1_scaled_param, beta2_scaled_param = p # these are beta1 * N, beta2 * N^2
+        rate_a = (beta1_scaled_param / N_val) * k * (N_val - k) # using N_val
+        rate_b = 0.0
+        if k >= 2:
+            rate_b = (beta2_scaled_param / (N_val**2)) * comb(k, 2, exact=False) * (N_val - k)
+        return max(0.0, rate_a + rate_b)
+    return complete_birth_rate
 
-def complete_death_rate(z, p):
-    mu_fixed = 1.0 # TODO: write a wrapper
-    k = int(z) # integer state
-    # set recovery rate c_k = mu * k
-    rate_c = mu_fixed * k
+def make_complete_death_rate_for_mu(mu_val):
+    def complete_death_rate(z, p): # p is not used because mu is fixed
+        k = int(z)
+        return max(0.0, mu_val * k)
+    return complete_death_rate
 
-    return max(0.0, rate_c)
+def estimate_em(N, mu_true, t_data_bd, p_data_bd, p0_guess, p_bounds, max_iter=100, print_metrics=False):
+    # call the wrappers to make custom rates functions:
+    custom_b_rate_func = make_complete_birth_rate_for_N(N)
+    custom_d_rate_func = make_complete_death_rate_for_mu(mu_true)
 
-def estimate_em(t_data_bd, p_data_bd, p0_guess, p_bounds, max_iter=100):
     # estimating beta1, beta2
     est_em_custom = bd.estimate(
         t_data=t_data_bd,
@@ -216,17 +216,18 @@ def estimate_em(t_data_bd, p_data_bd, p0_guess, p_bounds, max_iter=100):
         model='custom',
         framework='em',
         scheme='discrete',
-        b_rate=complete_birth_rate,
-        d_rate=complete_death_rate,
+        b_rate=custom_b_rate_func,
+        d_rate=custom_d_rate_func,
         max_it=max_iter,
         i_tol=1e-6,
         se_type='asymptotic',
         display=True
     )
-    print(f"Estimated parameters [beta1, beta2]: {est_em_custom.p}")
-    print(f"Standard errors: {est_em_custom.se}")
-    print(f"Log-likelihood: {est_em_custom.val}")
-    print(f"Compute time: {est_em_custom.compute_time:.0f} seconds")    
+    if print_metrics:
+        print(f"Estimated parameters [beta1, beta2]: {est_em_custom.p}")
+        print(f"Standard errors: {est_em_custom.se}")
+        print(f"Log-likelihood: {est_em_custom.val}")
+        print(f"Compute time: {est_em_custom.compute_time:.0f} seconds")    
     return est_em_custom
 
 def estimate_dnm(t_data_bd, p_data_bd, p0_guess, p_bounds):

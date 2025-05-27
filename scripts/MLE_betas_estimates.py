@@ -1,6 +1,9 @@
 # ./scripts/MLE_betas_estimates.py
 # Computes/loads MLE beta estimates, calculates metrics,
-# and saves a scatter plot to ./figures/combined/MLE_beta_estimates_scatter_hardcase.pdf
+# and saves a scatter plot to either:
+# ./figures/combined/beta_estimates_scatter_MLE_balanced_case.pdf
+#  or:
+# ./figures/combined/beta_estimates_scatter_MLE_hard_case.pdf
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,14 +19,17 @@ from estimate_total_rates import calculate_mle_beta1_beta2_complete
 if __name__ == "__main__":
     r"""
     This script tests the MLE framework for beta1 and beta2 on complete SCs.
+    
     It runs multiple independent estimations (each from a single Gillespie run)
     to assess the distribution and stability of the estimates.
+
     It saves the raw estimates and produces a scatter plot and key metrics.
     """
     # --- config -----
+    balanced_case = True
     zoom_in = True
 
-    run_estimations = False    # set to False for plot modifications
+    run_estimations = True    # set to False for plot modifications
     num_estimation_runs = 1000 # number of independent Gillespie runs for estimation
 
     test_name = "demos"
@@ -32,12 +38,17 @@ if __name__ == "__main__":
     time_max = 20.0
     mu_true = 1.0
 
-    # hand-picked pair = hard case: low beta1 (PW), high beta2 (HO) rate
-    beta1_s_val_true, beta2_s_val_true = (1.1, 8.0)
+    # true parameters for data generation 
+    if balanced_case:
+        # Case 1: "Balanced"
+        beta1_s_val_true, beta2_s_val_true = (2.4, 4.4)
+    else: 
+        # Case 2: "Hard Case"
+        # hand-picked pair = hard case: low beta1 (PW), high beta2 (HO) rate
+        beta1_s_val_true, beta2_s_val_true = (1.1, 8.0)
 
     # --- directory setup ---
-    output_base_dir_figs = "../figures/estimation/"
-    figure_dir = os.path.join(output_base_dir_figs, test_name)
+    figure_dir = "../figures/combined/"
 
     output_base_dir_data = "../results/estimation/"
     data_dir = os.path.join(output_base_dir_data, test_name)
@@ -107,13 +118,16 @@ if __name__ == "__main__":
     mse_beta1_s = np.mean((beta1_hats_np_scaled - beta1_s_val_true)**2)
     mse_beta2_s = np.mean((beta2_hats_np_scaled - beta2_s_val_true)**2)
 
-    print("\n--- Key Metrics for SCALED Beta Estimates ---")
+    print("\n--- Key Metrics for SCALED MLE Beta Estimates ---")
     print(f"Number of Estimation Runs: {len(beta1_hats_np_scaled)}")
     print(f"True Scaled (beta1*N, beta2*N^2): ({beta1_s_val_true:.3f}, {beta2_s_val_true:.3f})")
+
     print(f"Mean Estimated beta1_hat*N: {mean_beta1_hat_s:.3f} (StdDev: {std_beta1_hat_s:.3f})")
     print(f"Mean Estimated beta2_hat*N^2: {mean_beta2_hat_s:.3f} (StdDev: {std_beta2_hat_s:.3f})")
+
     print(f"Bias for beta1_hat*N: {bias_beta1_s:.3f}")
     print(f"Bias for beta2_hat*N^2: {bias_beta2_s:.3f}")
+
     print(f"MSE for beta1_hat*N: {mse_beta1_s:.4f}")
     print(f"MSE for beta2_hat*N^2: {mse_beta2_s:.4f}")
 
@@ -123,13 +137,13 @@ if __name__ == "__main__":
     # ----------------------------------
     plt.figure(figsize=(7, 6), dpi=150)
     
-    # TODO: adjust alpha / size / color
+    # TODO: adjust alpha / size / color (dodgerblue or darkorange)
     plt.scatter(beta1_hats_np_scaled, beta2_hats_np_scaled,
                 alpha=0.7, s=20, label=f'MLE Estimates ({len(beta1_hats_np_scaled)} runs)', color='dodgerblue')
     
     plt.scatter([beta1_s_val_true], [beta2_s_val_true],
                 marker='X', color='red', s=150, edgecolor='black', linewidth=1,
-                label='True Parameters', zorder=5)
+                alpha=1, label='True Parameters', zorder=10)
 
     plt.xlabel(r'Estimated Scaled Pairwise Rate ($\widehat{\beta_1 N}$)')
     plt.ylabel(r'Estimated Scaled Higher-Order Rate ($\widehat{\beta_2 N^2}$)')
@@ -140,8 +154,8 @@ if __name__ == "__main__":
     plt.axvline(beta1_s_val_true, color='grey', linestyle=':', linewidth=0.8, zorder=1)
     
     # TODO: set legend position
-    plt.legend(loc='best')
-    # plt.legend(loc='lower right')
+    # plt.legend(loc='best')
+    plt.legend(loc='lower left')
     # plt.grid(True, linestyle=':', alpha=0.5) # TODO: grid Yes / No?
 
     # TODO: For ZOOM-in:
@@ -154,14 +168,33 @@ if __name__ == "__main__":
         plt.xlim(max(0, x_lim_min), x_lim_max)
         plt.ylim(max(0, y_lim_min), y_lim_max)
 
-    plot_filename = os.path.join(figure_dir, f"MLE_beta_estimates_scatter_hardcase.pdf")
+    # plt.show()
+    if balanced_case:
+        plot_filename = os.path.join(figure_dir, f"beta_estimates_scatter_MLE_balanced_case.pdf")
+    else:
+        plot_filename = os.path.join(figure_dir, f"beta_estimates_scatter_MLE_hard_case.pdf")
     plt.savefig(plot_filename, format='pdf', bbox_inches='tight')
     print(f"\nScatter plot of estimates saved to {plot_filename}")
-    plt.show()
     plt.close()
 
 '''
 # Results for `num_estimation_runs = 1000`:
+
+
+# Test 1: balanced case:
+--- Key Metrics for SCALED MLE Beta Estimates ---
+  Number of Estimation Runs: 1000
+  True Scaled (beta1*N, beta2*N^2): (2.400, 4.400)
+
+  Mean Estimated beta1_hat*N: 2.400 (StdDev: 0.025)
+  Mean Estimated beta2_hat*N^2: 4.403 (StdDev: 0.057)
+
+  Bias for beta1_hat*N: -0.000
+  Bias for beta2_hat*N^2: 0.003
+
+  MSE for beta1_hat*N: 0.0006
+  MSE for beta2_hat*N^2: 0.0032
+
 
 # Key Metrics for SCALED Beta Estimates:
 
