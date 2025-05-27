@@ -11,8 +11,17 @@ import sys
 
 if __name__ == "__main__":
     # --- configuration ---
-    N = 100
-    I0 = 10
+    test_name = "em_data_quantity"
+
+    # data richness parameter for EM, how many nsims_pooled
+    nsims_pooled = 500 # NOTE: increased from 10 to 500
+
+    # for average Gillespie curve plot
+    # NOTE: ground truth, increased to a 1000
+    nsims_for_avg_display = 1000
+
+    N = 200
+    I0 = 20
     time_max = 10.0
     beta1_s_val_true, beta2_s_val_true = (2.4, 4.4)
     mu_true = 1.0
@@ -113,7 +122,7 @@ if __name__ == "__main__":
 
     # 1. average Gillespie curve (red line)
     plt.plot(times_gillespie_avg_raw, k_gillespie_avg_raw, 'r-', linewidth=2.0, alpha=0.8,
-             label='Avg. Gillespie (100 runs)', zorder=2)
+             label=f'Avg. Gillespie ({nsims_for_avg_display} runs)', zorder=2)
 
     # 2. KE solution using true beta1, beta2 (blue dashed line)
     plt.plot(times_ke, k_expected_true, 'b--', linewidth=2.0,
@@ -129,7 +138,7 @@ if __name__ == "__main__":
     plt.ylabel("Number of Infected (k)")
     
     # TODO: remove the title and write this rather in caption
-    title = f"KE Solutions vs. EM Estimates and Gillespie Average (N = {N}, I0 = {I0})\n"
+    title = f"KE(EM Estimates) and Gillespie Average (N = {N}, I0 = {I0}, nsims_pooled = {nsims_pooled})\n"
     title += f"True Scaled: $\\beta_1N={beta1_s_val_true:.1f}, \\beta_2N^2={beta2_s_val_true:.1f}$"
     plt.title(title, fontsize=11)
     

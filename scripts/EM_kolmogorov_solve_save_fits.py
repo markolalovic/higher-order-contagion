@@ -25,8 +25,16 @@ if __name__ == "__main__":
 
     # --- configuration ---
     test_name = "em_data_quantity"
-    N = 100
-    I0 = 10
+
+    # data richness parameter for EM, how many nsims_pooled
+    nsims_pooled = 500 # NOTE: increased from 10 to 500
+
+    # for average Gillespie curve plot
+    # NOTE: ground truth, increased to a 1000
+    nsims_for_avg_display = 1000
+    
+    N = 200
+    I0 = 20
     time_max = 10.0
     beta1_s_val_true, beta2_s_val_true = (2.4, 4.4)
     mu_true = 1.0
@@ -53,13 +61,7 @@ if __name__ == "__main__":
     max_beta1_em_bound_scaled = 10.0
     max_beta2_em_bound_scaled = 50.0
     p_em_bounds_scaled = [[1e-9, max_beta1_em_bound_scaled], [1e-9, max_beta2_em_bound_scaled]]
-    em_max_iterations = 100 # max iterations for each EM run
-    
-    # data richness parameter for EM, how many nsims_pooled
-    nsims_per_em = 10
-
-    # for average Gillespie curve plot
-    nsims_for_avg_display = 100
+    em_max_iterations = 1000 # max iterations for EM run NOTE: increased 
 
     print(f"--- Test: {test_name}, preparing data for ../figures/combined/kolmogorov_EM_fits_comparison.pdf ---")
     print(f"  N={N}, I0={I0}, time_max={time_max}, mu_true={mu_true}")
@@ -89,7 +91,7 @@ if __name__ == "__main__":
         return est_result.p
     
     # --- get EM estimates ---
-    est_params = perform_em_estimation(nsims_per_em) # EM estimates of beta1, beta2
+    est_params = perform_em_estimation(nsims_pooled) # EM estimates of beta1, beta2
 
     # --- KE solver setup ---
     # solve ode_system over time
@@ -142,7 +144,44 @@ if __name__ == "__main__":
     print("\nDone.")
 
 '''
---- Preparing Data for Plot: em_data_quantity ---
+--- Test: em_data_quantity, preparing data for ../figures/combined/kolmogorov_EM_fits_comparison.pdf ---
+  N=200, I0=20, time_max=10.0, mu_true=1.0
+  True beta1_scaled=2.40, True beta2_scaled=4.40
+	Generating data and running EM for N = 200, nsims_pooled = 500 ...
+
+Iteration  1  estimate is:  [2.04776774 1.02425158]
+Iteration  2  estimate is:  [3.07558863 1.98698375]
+Iteration  3  estimate is:  [2.41662883 4.18127068]
+Iteration  4  estimate is:  [2.4694549  4.03517039]
+Iteration  5  estimate is:  [2.42260427 4.18848665]
+Iteration  6  estimate is:  [2.4228148 4.1878135]
+Iteration  7  estimate is:  [2.4228148  4.18781349]
+
+# EM beta1, beta2 hats on num_intervals_discrete * nsims_pooled = 50k observations:
+
+Estimated parameters [beta1, beta2]: [2.4228148, 4.18781349]
+
+Standard errors: [np.float64(0.03909373725916694), np.float64(0.13832686432522498)]
+Log-likelihood: -100390.6050766773
+Compute time: 2604 seconds
+
+Solving KE with True Parameters...
+Done.
+
+Solving KE with EM Estimates...
+Done.
+
+
+Generating average gillespie curve (N=200, 1000 sims)...
+Done.
+
+
+All KE plot data saved to: ../data/demos/kolmogorov_EM_fits.csv
+Raw Gillespie average data saved to: ../data/demos/kolmogorov_EM_gillespie_avg.csv
+
+Done.
+
+--- Test: em_data_quantity, preparing data for ../figures/combined/kolmogorov_EM_fits_comparison.pdf ---
   N=100, I0=10, time_max=10.0, mu_true=1.0
   True beta1_scaled=2.40, True beta2_scaled=4.40
 	Generating data and running EM for N = 100, nsims_pooled = 10 ...
