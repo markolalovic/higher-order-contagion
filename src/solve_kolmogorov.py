@@ -1,4 +1,4 @@
-"""
+""" ./src/solve_kolmogorov.py
 Solving system of forward Kolmogorov equations on 
   * general
   * complete 
@@ -238,11 +238,10 @@ def list_all_ODEs(g, beta1, beta2, mu):
         return dpdt
     return ode_system
 
-def list_all_ODEs_complete(g, beta1, beta2, mu):
+def list_all_ODEs_complete(N, beta1, beta2, mu):
     r"""Returns the list of forward Kolmogorov equations dp_{k}(t)/dt = ...
-        for all states k = 0, 1, ..., N.
+        for all states k = 0, 1, ..., N for Complete SC.
     """
-    N = g.number_of_nodes()
     all_states = list(range(N + 1))
     M = len(all_states)
 
@@ -252,7 +251,11 @@ def list_all_ODEs_complete(g, beta1, beta2, mu):
     # {0: (0, 0), 1: (4, 0), 2: (6, 3), 3: (6, 6), 4: (4, 6), 5: (0, 0)}
     s12_cache = {}
     for state_k_ in all_states:
-        s1_, s2_ = total_SI_pairs_and_SII_triples(g, state_k_)
+        # simplifing Complete SC, no need for performance here
+        # s1_, s2_ = total_SI_pairs_and_SII_triples(g, state_k_)
+        s1_, s2_ = 0, 0
+        k = state_k_
+        s1_, s2_ = k * (N - k), (1/2) * k * (k - 1) * (N - k)     
         s12_cache[state_k_] = (s1_, s2_)
     
     def ode_system_complete(t, p):

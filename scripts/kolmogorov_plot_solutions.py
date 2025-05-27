@@ -36,6 +36,7 @@ if __name__ == "__main__":
     marker_size_mle = 60
     marker_alpha_mle = 0.8
 
+    # --- directory setup ---
     current_script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(current_script_dir)
     solutions_csv_input_dir = os.path.join(project_root, "data", "estimates")
