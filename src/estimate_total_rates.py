@@ -12,6 +12,71 @@ import scipy.linalg
 from scipy.sparse import diags
 import pickle
 
+def calculate_mle_beta1_beta2_complete(X_sims, N):
+    r"""
+    Calculates the Maximum Likelihood Estimates (MLEs): 
+      * for global beta1 and beta2
+      * for an SIS model on a COMPLETE simplicial complex
+      * given continuous observations
+      * where event types (PW, HO, RC) are distinguished
+    
+    NOTE: recovery rate mu can also be estimated, altough we asume it's known
+    """
+    total_U_events = 0.0 # sum of all pair wise birth events (sum over k of U_k in draft)
+    total_V_events = 0.0 # sum of all higher-order birth events (sum over k of V_k)
+    total_D_events = 0.0 # sum of all recovery events (sum over k of D_k)
+
+    # denominators for MLEs
+    # sum over k of [ S_k^(1) * T_k ] and [ S_k^(2) * T_k ]
+    # sum over k of [ k * T_k ] for mu
+    sum_S1_Tk = 0.0
+    sum_S2_Tk = 0.0
+    sum_k_Tk = 0.0
+
+    for sim_idx, X_t in enumerate(X_sims):
+        if X_t.shape[1] < 3:
+            print(f"Skipping sim {sim_idx}: has less than 3 recorded steps!")
+            continue
+
+        # iterate over actual events
+        for j in range(1, X_t.shape[1] - 1):
+            k_before = int(X_t[2, j-1])    # state *before* the j-th event
+            waiting_time = X_t[1, j]       # time spent in state k_before
+            event_type = X_t[3, j]         # type of the j-th event
+
+            # this should not happen for actual events
+            if waiting_time is None or waiting_time <= 0:
+                continue
+
+            # accumulate time spent in state k_before, weighted by structural opportunity
+            # for complete graph, S_k^(1) = k (N - k)
+            s1_k_before = k_before * (N - k_before)
+            sum_S1_Tk += s1_k_before * waiting_time
+
+            # for complete graph, S_k^(2) = binom(k,2)(N-k)
+            s2_k_before = 0.0
+            if k_before >= 2:
+                s2_k_before = comb(k_before, 2, exact=False) * (N - k_before)
+            sum_S2_Tk += s2_k_before * waiting_time
+
+            # for recovery rate
+            sum_k_Tk += k_before * waiting_time
+
+            # count event types
+            if event_type == 'PW':
+                total_U_events += 1
+            elif event_type == 'HO':
+                total_V_events += 1
+            elif event_type == 'RC':
+                total_D_events += 1
+
+    # --- Calculate MLEs ---
+    beta1_hat = total_U_events / sum_S1_Tk if sum_S1_Tk > 1e-9 else 0.0
+    beta2_hat = total_V_events / sum_S2_Tk if sum_S2_Tk > 1e-9 else 0.0
+    mu_hat_calc = total_D_events / sum_k_Tk if sum_k_Tk > 1e-9 else 0.0
+
+    return beta1_hat, beta2_hat, mu_hat_calc
+
 def calculate_estimates(X_sims, N, beta1_true, beta2_true, min_Tk_threshold=1e-9):
     r""" Calculates estimates of `a_k`, `b_k`:
       - Total rate MLEs: `a_k_hat`, `b_k_hat`

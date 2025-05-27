@@ -49,7 +49,7 @@ def gillespie_sim_complete(N, beta1, beta2, mu, I0, time_max):
         waiting_time = -np.log(u1) / total_rate
         time_next = t + waiting_time
         if time_next >= time_max:
-            print("break: time >= time_max")
+            # print("break: time >= time_max")
             break
 
         # draw event type
