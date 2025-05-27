@@ -1,4 +1,7 @@
-""" Estimate rates a_k, b_k. """
+""" Estimation of:
+  * state-wise total rates a_k, b_k, i.e.: per-state k rates
+  * underlying global rates beta_1, beta_2, i.e.: per-interaction rates  
+"""
 
 import numpy as np
 import matplotlib.pylab as plt
@@ -203,7 +206,7 @@ def complete_death_rate(z, p):
 
     return max(0.0, rate_c)
 
-def estimate_em(t_data_bd, p_data_bd, p0_guess, p_bounds):
+def estimate_em(t_data_bd, p_data_bd, p0_guess, p_bounds, max_iter=100):
     # estimating beta1, beta2
     est_em_custom = bd.estimate(
         t_data=t_data_bd,
@@ -215,7 +218,7 @@ def estimate_em(t_data_bd, p_data_bd, p0_guess, p_bounds):
         scheme='discrete',
         b_rate=complete_birth_rate,
         d_rate=complete_death_rate,
-        max_it=100,
+        max_it=max_iter,
         i_tol=1e-6,
         se_type='asymptotic',
         display=True
@@ -226,32 +229,9 @@ def estimate_em(t_data_bd, p_data_bd, p0_guess, p_bounds):
     print(f"Compute time: {est_em_custom.compute_time:.0f} seconds")    
     return est_em_custom
 
-def estimate_em_2(t_data_bd, p_data_bd, p0_guess, p_bounds):
+def estimate_dnm(t_data_bd, p_data_bd, p0_guess, p_bounds):
     # estimating beta1, beta2
-    est_em_custom = bd.estimate(
-        t_data=t_data_bd,
-        p_data=p_data_bd,
-        p0=p0_guess,
-        p_bounds=p_bounds,
-        model='custom',
-        # framework='em',
-        scheme='discrete',
-        b_rate=complete_birth_rate,
-        d_rate=complete_death_rate,
-        max_it=100,
-        i_tol=1e-6,
-        # se_type='asymptotic',
-        display=True
-    )
-    print(f"Estimated parameters [beta1, beta2]: {est_em_custom.p}")
-    print(f"Standard errors: {est_em_custom.se}")
-    print(f"Log-likelihood: {est_em_custom.val}")
-    print(f"Compute time: {est_em_custom.compute_time:.0f} seconds")    
-    return est_em_custom
-
-def estimate_em_3(t_data_bd, p_data_bd, p0_guess, p_bounds):
-    # estimating beta1, beta2
-    est_em_custom = bd.estimate(
+    est_dnm_custom = bd.estimate(
         t_data=t_data_bd,
         p_data=p_data_bd,
         p0=p0_guess,
@@ -267,11 +247,11 @@ def estimate_em_3(t_data_bd, p_data_bd, p0_guess, p_bounds):
         se_type='asymptotic',
         display=True
     )
-    print(f"Estimated parameters [beta1, beta2]: {est_em_custom.p}")
-    print(f"Standard errors: {est_em_custom.se}")
-    print(f"Log-likelihood: {est_em_custom.val}")
-    print(f"Compute time: {est_em_custom.compute_time:.0f} seconds")    
-    return est_em_custom
+    print(f"Estimated parameters [beta1, beta2]: {est_dnm_custom.p}")
+    print(f"Standard errors: {est_dnm_custom.se}")
+    print(f"Log-likelihood: {est_dnm_custom.val}")
+    print(f"Compute time: {est_dnm_custom.compute_time:.0f} seconds")    
+    return est_dnm_custom
 
 def di_lauro_ak_model(k, N_val, C_a, p_a, alpha_a):
     r"""
