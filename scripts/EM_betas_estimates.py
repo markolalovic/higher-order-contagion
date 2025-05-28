@@ -30,8 +30,8 @@ if __name__ == "__main__":
     # --- config ---
     zoom_in = False
 
-    run_estimations = False    # set to False for plot modifications
-    num_estimation_runs = 100  # number of independent EM estimations to perform
+    run_estimations = True    # set to False for plot modifications
+    num_estimation_runs = 1000  # number of independent EM estimations to perform <- TODO: increase to 1000
     nsims_per_em_run = 10      # number of pooled Gillespie sims for each EM run
 
     test_name = "EM_complete_discrete_unknown_event_types"
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     dir_figure = "../figures/combined/"
     dir_data = "../results/estimation/demos/"
 
-    file_name_estimates = f"EM_beta_estimates_{N}_I0{I0}_runs{num_estimation_runs}_b1s{beta1_s_val_true}_b2s{beta2_s_val_true}.pkl"
+    file_name_estimates = f"EM_beta_estimates_{N}_I0{I0}_runs{num_estimation_runs}.pkl"
     estimates_filename = os.path.join(dir_data, file_name_estimates)
 
     # for data generation, convert SCALED true betas to ORIGINAL per-interaction true betas
