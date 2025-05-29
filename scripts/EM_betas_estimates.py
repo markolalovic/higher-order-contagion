@@ -28,9 +28,9 @@ if __name__ == "__main__":
     It saves the raw estimates and produces a scatter plot and key metrics.
     """
     # --- config ---
-    zoom_in = False
+    zoom_in = True
 
-    run_estimations = True    # set to False for plot modifications
+    run_estimations = False    # set to False for plot modifications!!
     num_estimation_runs = 1000  # number of independent EM estimations to perform <- TODO: increase to 1000
     nsims_per_em_run = 10      # number of pooled Gillespie sims for each EM run
 
@@ -230,7 +230,7 @@ if __name__ == "__main__":
     plt.axvline(beta1_s_val_true, color='grey', linestyle=':', linewidth=0.8, zorder=1)
 
     # TODO: set legend position
-    plt.legend(loc='best')
+    plt.legend(loc='lower left')
     # plt.grid(True, linestyle=':', alpha=0.5)  # TODO: grid Yes / No?
 
     if zoom_in:

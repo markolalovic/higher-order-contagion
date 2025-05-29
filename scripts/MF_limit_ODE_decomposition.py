@@ -56,9 +56,15 @@ def solve_system_D(N, I0, beta1, beta2, mu, time_max, num_steps=201):
 
 if __name__ == "__main__":
     # --- Plot settings ---
-    plt_linewidth_total = 2
-    plt_linewidth_pw = 2
-    plt_linewidth_ho = 4
+    plt_DPI = 200
+    fig_w, fig_h = 8, 5  # 8:5 ratio goes well with beamer
+    plt_legend_fontsize = 16
+    plt_labels_fontsize = 18
+    plt_tick_fontsize = 14  # for tick labels
+
+    plt_linewidth_total = 3  # thicker for visibility
+    plt_linewidth_pw = 2.5       
+    plt_linewidth_ho = 3     # dotted line needs to be thicker
 
 
     # --- Setup ---
@@ -92,7 +98,7 @@ if __name__ == "__main__":
     # ---- Plot it ----
     # -----------------
     # TODO: adjusted the size slightly for slides
-    fig, ax = plt.subplots(figsize=(7, 5), dpi=150)
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h), dpi=plt_DPI)
 
     # Plot y(t) = Total Infected Fraction
     ax.plot(t, y_total, color='black', linestyle='-', linewidth=plt_linewidth_total,
@@ -106,25 +112,41 @@ if __name__ == "__main__":
     ax.plot(t, h_higher_order, color='blue', linestyle=':', linewidth=plt_linewidth_ho,
             label=r'$h(t)$ (Higher-Order)', zorder=2)
 
-    ax.set_xlabel("Time (t)", fontsize=12)
-    ax.set_ylabel("Fraction Infected", fontsize=12)
+    ax.set_xlabel("Time (t)", fontsize=plt_labels_fontsize)
+    ax.set_ylabel("Fraction Infected", fontsize=plt_labels_fontsize)
 
     # TODO: careful with scaled parameters, addewd to the title for consistency
     # TODO: adjust smaller title font for slides
-    title_beta1_str = f"{beta1_scaled:.1f}"
-    title_beta2_str = f"{beta2_scaled:.1f}"
-    ax.set_title(f"Decomposition of Infections (MF Model)\n" + \
-                 r"$\beta_1 N = $" + title_beta1_str + r", $\beta_2 N^2 = $" + title_beta2_str + \
-                 r", $y(0) = $" + f"{I0_prop:.2f}",
-                 fontsize=11)
+    # NOTE: no title, moved to caption
+    # title_beta1_str = f"{beta1_scaled:.1f}"
+    # title_beta2_str = f"{beta2_scaled:.1f}"
+    # ax.set_title(f"Decomposition of Infections (MF Model)\n" + \
+    #              r"$\beta_1 N = $" + title_beta1_str + r", $\beta_2 N^2 = $" + title_beta2_str + \
+    #              r", $y(0) = $" + f"{I0_prop:.2f}",
+    #              fontsize=11)
     
-    ax.legend(fontsize=10, loc='lower right')
-    ax.grid(True, linestyle=':', alpha=0.5) # TODO: grid to see the crossover at 4.1
+
+    # presentation-friendly plot
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_linewidth(1.5)
+    ax.spines['bottom'].set_linewidth(1.5)
+
+    # bolder grid to see the crossover at 4.1
+    # ax.grid(True, linestyle=':', alpha=0.7, linewidth=1)
+
+    # adjusting legend for better visibility
+    ax.legend(fontsize=plt_legend_fontsize, loc='lower right', 
+            frameon=True, fancybox=True, shadow=False, 
+            framealpha=0.9, edgecolor='gray')
+
+    # ax.legend(fontsize=plt_legend_fontsize, loc='lower right')
+    # ax.grid(True, linestyle=':', alpha=0.5) # TODO: grid to see the crossover at 4.1
     ax.set_ylim(bottom=0, top=max(0.01, np.max(y_total) * 1.05))
     ax.set_xlim(left=0, right=time_max)
 
     # TODO: ensure ticks are visible
-    ax.tick_params(axis='both', which='major', labelsize=10)
+    ax.tick_params(axis='both', which='major', labelsize=plt_tick_fontsize)
 
     plt.tight_layout()
 

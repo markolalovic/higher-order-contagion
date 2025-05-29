@@ -47,7 +47,6 @@ if __name__ == "__main__":
     fig_output_dir = os.path.join(project_root_dir, 'figures', 'combined', 'estimates')
     os.makedirs(fig_output_dir, exist_ok=True)
 
-
     for test_name in test_names:
         print(f"\n--- Generating MLE Plot for Class: {test_name} ---")
         csv_path = os.path.join(csv_input_dir, f'estimates_{test_name}.csv')
@@ -93,7 +92,7 @@ if __name__ == "__main__":
         # ---a figure with two subplots one for a_k, one for b_k ---
         fig, axes = plt.subplots(2, 1, figsize=(8, 10), sharex=True) # that share x-axis
         
-        fig.suptitle(plot_titles[test_name], fontsize=14)
+        # fig.suptitle(plot_titles[test_name], fontsize=14)
 
         # --- subplot for a_k_hat ---
         axes[0].plot(k_full_range, ak_fitted, color='black', linewidth=plt_line_width_fitted,
