@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     # --- config ---
     zoom_in = True
-    run_estimations = True    # set to False for plot modifications!!
+    run_estimations = False    # set to False for plot modifications!!
     num_estimation_runs = 100  # TODO: increase to 1000 number of independent EM estimations to perform <- TODO: increase to 1000
     nsims_per_em_run = 10      # number of pooled Gillespie sims for each EM run
 
@@ -247,7 +247,7 @@ if __name__ == "__main__":
     ax.axvline(beta1_s_val_true, color='grey', linestyle=':', linewidth=1, alpha=0.8, zorder=1)
 
     # Grid
-    ax.grid(True, linestyle=':', alpha=0.4)
+    # ax.grid(True, linestyle=':', alpha=0.4)
 
     # Legend
     ax.legend(fontsize=plt_legend_fontsize, loc='lower left',
@@ -256,15 +256,18 @@ if __name__ == "__main__":
 
     if zoom_in:
         # set axis limits to zoom, to not show the full spread
-        x_lim_min = beta1_s_val_true - std_beta1_hat_s * zoom_in_spread
-        x_lim_max = beta1_s_val_true + std_beta1_hat_s * zoom_in_spread
-        y_lim_min = beta2_s_val_true - std_beta2_hat_s * zoom_in_spread
-        y_lim_max = beta2_s_val_true + std_beta2_hat_s * zoom_in_spread
+        x_lim_min = beta1_s_val_true - std_b1_s_hat * zoom_in_spread
+        x_lim_max = beta1_s_val_true + std_b1_s_hat * zoom_in_spread
+        y_lim_min = beta2_s_val_true - std_b2_s_hat * zoom_in_spread
+        y_lim_max = beta2_s_val_true + std_b2_s_hat * zoom_in_spread
         ax.set_xlim(max(0, x_lim_min), x_lim_max)
         ax.set_ylim(max(0, y_lim_min), y_lim_max)
     
     # Tick parameters
-    ax.tick_params(axis='both', which='major', labelsize=plt_tick_fontsize)
+    # ax.tick_params(axis='both', which='major', labelsize=plt_tick_fontsize)
+    # TODO: draw one vertical, one horizontal dashed line
+    ax.axvline(x=beta1_s_val_true, color='gray', linestyle='--', linewidth=1)
+    ax.axhline(y=beta2_s_val_true, color='gray', linestyle='--', linewidth=1)    
     
     # Presentation-friendly plot
     # ax.spines['top'].set_visible(False)

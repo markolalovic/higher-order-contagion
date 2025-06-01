@@ -40,8 +40,8 @@ if __name__ == "__main__":
     zoom_in_spread = 4
 
     # --- config -----
-    balanced_case = True
-    run_estimations = False    # set to False for plot modifications
+    balanced_case = False
+    run_estimations = True    # set to False for plot modifications
 
     zoom_in = True
     num_estimation_runs = 1000 # number of independent Gillespie runs for estimation
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     ax.axvline(beta1_s_val_true, color='grey', linestyle=':', linewidth=1, alpha=0.8, zorder=1)
 
     # Grid
-    ax.grid(True, linestyle=':', alpha=0.4)
+    # ax.grid(True, linestyle=':', alpha=0.4)
 
     # Legend
     ax.legend(fontsize=plt_legend_fontsize, loc='lower left',
@@ -195,7 +195,10 @@ if __name__ == "__main__":
         ax.set_ylim(max(0, y_lim_min), y_lim_max)
 
     # Tick parameters
-    ax.tick_params(axis='both', which='major', labelsize=plt_tick_fontsize)
+    # ax.tick_params(axis='both', which='major', linestyle='dashed', labelsize=plt_tick_fontsize)
+    # TODO: draw one vertical, one horizontal dashed line
+    ax.axvline(x=beta1_s_val_true, color='gray', linestyle='--', linewidth=1)
+    ax.axhline(y=beta2_s_val_true, color='gray', linestyle='--', linewidth=1)
 
     # Presentation-friendly plot
     # ax.spines['top'].set_visible(False)
