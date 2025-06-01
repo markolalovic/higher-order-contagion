@@ -27,11 +27,22 @@ if __name__ == "__main__":
 
     It saves the raw estimates and produces a scatter plot and key metrics.
     """
+    # --- Plot settings ---
+    plt_DPI = 200
+    fig_w, fig_h = 7, 6  # 8:5 ratio goes well with beamer
+    plt_legend_fontsize = 16
+    plt_labels_fontsize = 18
+    plt_tick_fontsize = 14  # for tick labels
+
+    scatter_size = 25
+    scatter_alpha = 0.8
+    marker_size = 250
+    zoom_in_spread = 4
+
     # --- config ---
     zoom_in = True
-
-    run_estimations = False    # set to False for plot modifications!!
-    num_estimation_runs = 1000  # number of independent EM estimations to perform <- TODO: increase to 1000
+    run_estimations = True    # set to False for plot modifications!!
+    num_estimation_runs = 100  # TODO: increase to 1000 number of independent EM estimations to perform <- TODO: increase to 1000
     nsims_per_em_run = 10      # number of pooled Gillespie sims for each EM run
 
     test_name = "EM_complete_discrete_unknown_event_types"
@@ -210,37 +221,58 @@ if __name__ == "__main__":
     # ---------------------------------------
     # --- scatter plot of estimates ---------
     # ---------------------------------------
-    plt.figure(figsize=(7, 6), dpi=150)
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h), dpi=plt_DPI)
 
-    # TODO: adjust alpha / size / color (dodgerblue or darkorange)
-    plt.scatter(beta1_hats_s_valid, beta2_hats_s_valid,
-                alpha=0.9, s=25, label=f'EM Estimates ({num_valid_estimates} runs)', color='dodgerblue') # darkorange
+    # Scatter plot of estimates
+    ax.scatter(beta1_hats_s_valid, beta2_hats_s_valid,
+               alpha=scatter_alpha, s=scatter_size, 
+               label=f'EM Estimates ({num_valid_estimates} runs)', 
+               color='dodgerblue') # darkorange
     
-    plt.scatter([beta1_s_val_true], [beta2_s_val_true],
-                marker='X', color='red', s=150, edgecolor='black', linewidth=1,
-                alpha=1, label='True Parameters', zorder=5)
+    # True parameters
+    label_true = f'True parameters ({beta1_s_val_true:.1f}, {beta2_s_val_true:.1f})'
+    ax.scatter([beta1_s_val_true], [beta2_s_val_true],
+                marker='X', color='red', s=marker_size, edgecolor='black', linewidth=1.5,
+                alpha=1, label=label_true, zorder=10)
 
-    plt.xlabel(r'Estimated Scaled Pairwise Rate ($\widehat{\beta_1 N}$)')
-    plt.ylabel(r'Estimated Scaled Higher-Order Rate ($\widehat{\beta_2 N^2}$)')
-
+    # Labels
+    ax.set_xlabel(r'Estimated Pairwise Rate ($\widehat{\beta_1 N}$)', fontsize=plt_labels_fontsize)
+    ax.set_ylabel(r'Estimated Higher-Order Rate ($\widehat{\beta_2 N^2}$)', fontsize=plt_labels_fontsize)
 
     # TODO: use the title for a figure caption rather than on the plot itself
     # plt.title(f'Distribution of EM estimates for (beta1 N, beta2 N^2)\n(N = {N}, I0 = {I0}, True beta1 N={beta1_s_val_true}, True beta2 N^2 ={beta2_s_val_true})')    
-    plt.axhline(beta2_s_val_true, color='grey', linestyle=':', linewidth=0.8, zorder=1)
-    plt.axvline(beta1_s_val_true, color='grey', linestyle=':', linewidth=0.8, zorder=1)
 
-    # TODO: set legend position
-    plt.legend(loc='lower left')
-    # plt.grid(True, linestyle=':', alpha=0.5)  # TODO: grid Yes / No?
+    # Reference lines
+    ax.axhline(beta2_s_val_true, color='grey', linestyle=':', linewidth=1, alpha=0.8, zorder=1)
+    ax.axvline(beta1_s_val_true, color='grey', linestyle=':', linewidth=1, alpha=0.8, zorder=1)
+
+    # Grid
+    ax.grid(True, linestyle=':', alpha=0.4)
+
+    # Legend
+    ax.legend(fontsize=plt_legend_fontsize, loc='lower left',
+              frameon=True, fancybox=True, shadow=False,
+              framealpha=0.9, edgecolor='gray')
 
     if zoom_in:
-        zoom_factor = 3.5
-        x_lim_min_plot = beta1_s_val_true - std_b1_s_hat * zoom_factor
-        x_lim_max_plot = beta1_s_val_true + std_b1_s_hat * zoom_factor
-        y_lim_min_plot = beta2_s_val_true - std_b2_s_hat * zoom_factor
-        y_lim_max_plot = beta2_s_val_true + std_b2_s_hat * zoom_factor
-        plt.xlim(max(0, x_lim_min_plot), x_lim_max_plot if x_lim_max_plot > x_lim_min_plot + 0.1 else x_lim_min_plot + 0.1)
-        plt.ylim(max(0, y_lim_min_plot), y_lim_max_plot if y_lim_max_plot > y_lim_min_plot + 0.1 else y_lim_min_plot + 0.1)
+        # set axis limits to zoom, to not show the full spread
+        x_lim_min = beta1_s_val_true - std_beta1_hat_s * zoom_in_spread
+        x_lim_max = beta1_s_val_true + std_beta1_hat_s * zoom_in_spread
+        y_lim_min = beta2_s_val_true - std_beta2_hat_s * zoom_in_spread
+        y_lim_max = beta2_s_val_true + std_beta2_hat_s * zoom_in_spread
+        ax.set_xlim(max(0, x_lim_min), x_lim_max)
+        ax.set_ylim(max(0, y_lim_min), y_lim_max)
+    
+    # Tick parameters
+    ax.tick_params(axis='both', which='major', labelsize=plt_tick_fontsize)
+    
+    # Presentation-friendly plot
+    # ax.spines['top'].set_visible(False)
+    # ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_linewidth(1.5)
+    ax.spines['bottom'].set_linewidth(1.5)
+
+    plt.tight_layout()
 
     # plt.show()
     # plot_filename = f"EM_beta_estimates_scatter_N{N}_b1s{beta1_s_val_true}_b2s{beta2_s_val_true}.pdf"
@@ -249,7 +281,6 @@ if __name__ == "__main__":
     plt.savefig(plot_filepath, format='pdf', bbox_inches='tight')
     print(f"\nScatter plot of EM estimates saved to {plot_filepath}")
     plt.close()
-
 
 '''
 # Test 1: balanced case:

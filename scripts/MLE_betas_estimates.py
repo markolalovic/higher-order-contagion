@@ -172,6 +172,7 @@ if __name__ == "__main__":
     # \n(N = {N}, I0 = {I0}, 
     # True beta1 N={beta1_s_val_true}, 
     # True beta2 N^2 ={beta2_s_val_true})')
+
     # Reference lines
     ax.axhline(beta2_s_val_true, color='grey', linestyle=':', linewidth=1, alpha=0.8, zorder=1)
     ax.axvline(beta1_s_val_true, color='grey', linestyle=':', linewidth=1, alpha=0.8, zorder=1)
@@ -184,7 +185,6 @@ if __name__ == "__main__":
               frameon=True, fancybox=True, shadow=False,
               framealpha=0.9, edgecolor='gray')
 
-    # TODO: For ZOOM-in:
     if zoom_in:
         # set axis limits to zoom, to not show the full spread
         x_lim_min = beta1_s_val_true - std_beta1_hat_s * zoom_in_spread

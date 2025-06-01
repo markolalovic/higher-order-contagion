@@ -86,7 +86,7 @@ python3 -m pip install -r requirements.txt
 ### Minimal dependencies
 ```bash
 # For the main / core functionality
-python3 -m pip install numpy scipy
+python3 -m pip install numpy scipy birdepy
 
 # For plotting results and data handling
 python3 -m pip install matplotlib pandas
