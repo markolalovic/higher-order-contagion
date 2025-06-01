@@ -28,8 +28,8 @@ if __name__ == "__main__":
     num_samples = 10
     csv_base_dir = "../data/gillespie_sims/"
 
-    test_names = ["complete", "random_ER", "regular", "scale_free"]
-    plot_titles = ["Complete", "Erdős-Rényi", "Regular", "Scale-Free"]
+    test_names = ["complete", "regular", "random_ER", "scale_free"]
+    plot_titles = ["Complete", "Regular", "Erdős-Rényi", "Scale-Free"]
 
     output_figure_dir = "../figures/combined/"
     os.makedirs(output_figure_dir, exist_ok=True)

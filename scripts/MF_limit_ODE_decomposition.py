@@ -66,7 +66,6 @@ if __name__ == "__main__":
     plt_linewidth_pw = 2.5       
     plt_linewidth_ho = 3     # dotted line needs to be thicker
 
-
     # --- Setup ---
     N = 1000
     I0 = 50

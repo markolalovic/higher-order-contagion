@@ -17,6 +17,14 @@ import sys
 # from higher_order_structures import Complete
 
 if __name__ == "__main__":
+
+    # ----  plot settings  ----
+    plt_DPI = 200
+    fig_w, fig_h = 8, 6.5
+    plt_legend_fontsize = 16
+    plt_labels_fontsize = 18
+    plt_tick_fontsize = 14
+
     # --- setup ---
     test_name = "demos"
     N = 1000
@@ -26,7 +34,7 @@ if __name__ == "__main__":
     mu = 1.0
 
     # --- output dirs ---
-    output_dir_figs = f"../figures/estimation/{test_name}/"
+    output_dir_figs = f"../figures/combined/"
     os.makedirs(output_dir_figs, exist_ok=True)
     data_dir_results = f"../results/estimation/{test_name}/"
 
@@ -62,7 +70,7 @@ if __name__ == "__main__":
     # --- Contour Plot ---
     B1_s, B2_s = np.meshgrid(beta1_scaled_vec, beta2_scaled_vec)
 
-    plt.figure(figsize=(8, 6.5), dpi=150)
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h), dpi=plt_DPI)
 
     # define specific contour levels
     contour_level_target = 0.75 * N
@@ -74,44 +82,72 @@ if __name__ == "__main__":
     k_min_plot = np.nanmin(k_star_matrix_gillespie)
     k_max_plot = np.nanmax(k_star_matrix_gillespie)
     contourf_levels = np.linspace(max(0, k_min_plot), min(N, k_max_plot), 21)
+    # could simplify: np.linspace(0, 1000, 6) = array([   0.,  200.,  400.,  600.,  800., 1000.])
+    # contourf_levels = np.linspace(0, 1000, 6)
 
     # plot filled contours, clipped by axis limits later
-    contourf_plot = plt.contourf(B1_s, B2_s, k_star_matrix_gillespie.T,
+    contourf_plot = ax.contourf(B1_s, B2_s, k_star_matrix_gillespie.T,
                                 levels=contourf_levels, cmap='viridis', alpha=0.75, extend='both')
-    cbar = plt.colorbar(contourf_plot, label=f'$k^* = E[X(t_{{{time_max:.0f}}})]$') # k^*_{{GillespieAvg}}
-    cbar.set_ticks(np.linspace(max(0, k_min_plot), min(N, k_max_plot), 6))
+    
+    # cbar = plt.colorbar(contourf_plot, label=f'$k^* = E[X(t_{{{time_max:.0f}}})]$') # k^*_{{GillespieAvg}}
+    # TODO: label can be more concise about what k^* is
+    cbar = plt.colorbar(contourf_plot, ax=ax, label=r'Quasi-Steady State $k^* = E[X(t_{20})]$')
+    cbar.ax.tick_params(labelsize=plt_tick_fontsize)
+    cbar.set_label(r'Quasi-Steady State $k^*$', size=plt_labels_fontsize)
+
+    # TODO: could simplify to {0, 2, 4, 6, 10} * 100
+    # cbar_ticks = np.linspace(max(0, k_min_plot), min(N, k_max_plot), 6)
+    # cbar_ticks = np.linspace(0, 1000, 6)
+    cbar_ticks = np.array([0, 250, 500, 750, 1000])
+    cbar.set_ticks(cbar_ticks)
 
     # plot specific contour lines (these will also be clipped by axis limits)
-    contour_lines = plt.contour(B1_s, B2_s, k_star_matrix_gillespie.T,
+    contour_lines = ax.contour(B1_s, B2_s, k_star_matrix_gillespie.T,
                                 levels=contour_levels_specific,
                                 colors=contour_colors_specific,
-                                linewidths=2.0, linestyles='solid', zorder=3) # zorder to ensuer lines are on top of contourf
-    plt.clabel(contour_lines, inline=True, fontsize=10, fmt='%1.0f', colors='black')
+                                linewidths=2.0, linestyles='solid', zorder=3) # zorder for lines on top of contourf
+    
+    ax.clabel(contour_lines, inline=True, fontsize=plt_tick_fontsize, fmt='%1.0f', colors='black') # clabel fontsize adjusted
 
     # --- add points for the k*~750 regime ---
-    if points_for_750_regime_np.size > 0:
-        plt.scatter(points_for_750_regime_np[:, 0],
-                    points_for_750_regime_np[:, 1],
-                    marker='X', # 'X', 'P' for filled plus, or '*' for star
-                    s=150,
-                    color='red',
-                    edgecolors='black',
-                    linewidth=0.75,
-                    label=f'Test Points ($k^* \\approx {contour_level_target:.0f}$)',
-                    zorder=5)
+    ax.scatter(points_for_750_regime_np[:, 0],
+                points_for_750_regime_np[:, 1],
+                marker='X', # 'X', 'P' for filled plus, or '*' for star
+                s=500,
+                color='red',
+                edgecolors='black',
+                linewidth=0.75,
+                label=f'Test Points ($k^* \\approx {contour_level_target:.0f}$)',
+                zorder=5)
 
-    plt.xlabel(r'Scaled Pairwise Rate ($\beta_1 N$)')
-    plt.ylabel(r'Scaled Higher-Order Rate ($\beta_2 N^2$)')
-    plt_title = f'Quasi-Steady State $k^*$ (Gillespie Averages)\n'
-    plt_title += f'$N={N}, I_0={I0}, mu={mu}, t_{{max}}={time_max}, {nsims}$ sims/pt'
-    plt.title(plt_title)
-    plt.grid(True, linestyle=':', alpha=0.4)
+    ax.set_xlabel(r'Pairwise Rate ($\beta_1 N$)', fontsize=plt_labels_fontsize)
+    ax.set_ylabel(r'Higher-Order Rate ($\beta_2 N^2$)', fontsize=plt_labels_fontsize)
+
+    # TODO: add details to caption
+    # Quasi-Steady State k * (Gillespie Averages) N = 1000, I0 = 50, mu = 1.0, tmax = 20.0, 20 sims/pt
+
+    # plt_title = f'Quasi-Steady State $k^*$ (Gillespie Averages)\n'
+    # plt_title += f'$N={N}, I_0={I0}, mu={mu}, t_{{max}}={time_max}, {nsims}$ sims/pt'
+    # plt.title(plt_title)
+    
+    # TODO: grid: True / False?
+    ax.grid(True, linestyle=':', alpha=0.4)
 
     # --- set the axis limits to restrict the view ---
-    plt.xlim(beta1_s_min, 4.5)  # restricted beta1_scaled up to 4.5
-    plt.ylim(beta2_s_min, 8.5)  # restricted beta2_scaled up to 8.5
+    ax.set_xlim(beta1_s_min, 4.5)
+    ax.set_ylim(beta2_s_min, 8.5)
 
-    plt.legend(loc='upper right') # bbox_to_anchor=(0.01, 0.99)
+    # TODO: spine settings
+    # ax.spines['top'].set_visible(False)
+    # ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_linewidth(1.5)
+    ax.spines['bottom'].set_linewidth(1.5)
+
+    ax.legend(fontsize=plt_legend_fontsize, loc='upper right',
+            frameon=True, fancybox=True, shadow=False,
+            framealpha=0.9, edgecolor='gray')
+    
+    ax.tick_params(axis='both', which='major', labelsize=plt_tick_fontsize)
 
     plot_filename = "k_star_contour.pdf"
     plot_path = os.path.join(output_dir_figs, plot_filename)
