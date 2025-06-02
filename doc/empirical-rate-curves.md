@@ -1,8 +1,3 @@
----
-output:
-  pdf_document: default
-  html_document: default
----
 ## Models used to fit empirical infection rate curves $\widetilde{a}_k$ and $\widetilde{b}_k$
 
 Generalized model fits, inspired by Di Lauro et al. "Network inference from population-level observation of epidemics." Scientific Reports 10.1 (2020): 18779.
