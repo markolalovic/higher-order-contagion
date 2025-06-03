@@ -22,7 +22,6 @@ where:
 
 - $\alpha$ controls the skewness
 
-
 To get the $\widetilde{a}$, $\widetilde{b}$ curves, we find the values of $(C_a, p_a, \alpha_a)$, and $(C_b, p_b, \alpha_b)$ using non-linear least squares with the `curve_fit` function from the `scipy.optimize` library in Python.
 
 With bounds for the parameter: $C_a, C_b \ge 0$, and $p_a, p_b > 0$.
@@ -55,6 +54,3 @@ Fitting is done in `./scripts/estimates_export.py`.
 <img src="../figures/combined/tilde_fits/positive_skewed.svg" alt="positive skewed" width="800" height="500">
 
   - This means that, if fitted value of $\alpha$ is negative, this will result in skewed empirical curve, which is called positive skewed, i.e. long tail on the right.
-
-
-
