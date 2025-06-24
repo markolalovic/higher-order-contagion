@@ -80,8 +80,8 @@ def get_average_decomposed(X_sims_list, t_max, num_sims, delta_t=0.01, selected_
 
 if __name__ == "__main__":
     ## --- Setup ---
-    N = 100
-    I0 = 20
+    N = 1000
+    I0 = 50
     time_max = 10.0
     beta1_scaled = 2.0
     beta2_scaled = 6.0
@@ -89,8 +89,7 @@ if __name__ == "__main__":
     beta1 = beta1_scaled / N
     beta2 = beta2_scaled / (N**2)
     nsims = 1000
-
-    # Initialize random number generator for Gillespie
+    
     rng = np.random.default_rng(123)
 
     # ===================================================================
@@ -185,28 +184,39 @@ if __name__ == "__main__":
     print("--- Plotting Comparison ---")
     plt_DPI = 200
     fig_w, fig_h = 8, 5
-    plt_legend_fontsize = 14
-    plt_labels_fontsize = 18
-    plt_tick_fontsize = 14
+    plt_legend_fontsize = 12
+    plt_labels_fontsize = 16
+    plt_tick_fontsize = 12
 
     fig, ax = plt.subplots(figsize=(fig_w, fig_h), dpi=plt_DPI)
 
-    # system (E) in color
-    ax.plot(sol.t, ke_E_k_total, color='black', linestyle='-', linewidth=3,
+    # system (E) in color solid lines
+    ax.plot(sol.t, ke_E_k_total, color='black', linestyle='-', linewidth=1, alpha = 0.8,
             label=r'KE: $E[k_{total}]$', zorder=5)
-    ax.plot(sol.t, ke_E_k1, color='red', linestyle='--', linewidth=2.5,
+    ax.plot(sol.t, ke_E_k1, color='red', linestyle='-', linewidth=1, alpha = 0.8,
             label=r'KE: $E[k_{pw}]$', zorder=4)
-    ax.plot(sol.t, ke_E_k2, color='blue', linestyle=':', linewidth=3,
+    ax.plot(sol.t, ke_E_k2, color='blue', linestyle='-', linewidth=1, alpha = 0.8,
             label=r'KE: $E[k_{ho}]$', zorder=4)
 
-    # Gillespie averages in gray
-    ax.plot(common_times, g_avg_k_total, color='gray', linestyle='-', linewidth=5, alpha=0.9,
-            label=r'Gillespie: Avg $k_{total}$', zorder=3)
-    ax.plot(common_times, g_avg_k_pw, color='darkgray', linestyle='--', linewidth=2, alpha=0.9,
-            label=r'Gillespie: Avg $k_{pw}$', zorder=2)
-    ax.plot(common_times, g_avg_k_ho, color='lightgray', linestyle=':', linewidth=4, alpha=0.9,
-            label=r'Gillespie: Avg $k_{ho}$', zorder=1)
+    # Gillespie averages with symbols markers
+    marker_frequency = 10
+    marker_size = 8
 
+    ax.plot(common_times, g_avg_k_total,
+            marker='o', color='black', linestyle='None',
+            markersize=marker_size, mfc='none', # mfc='none' for open circles
+            markevery=marker_frequency, label=r'Gillespie: Avg $k_{total}$', zorder=3)
+
+    ax.plot(common_times, g_avg_k_pw,
+            marker='o', color='red', linestyle='None',
+            markersize=marker_size, mfc='none',
+            markevery=marker_frequency, label=r'Gillespie: Avg $k_{pw}$', zorder=2)
+    
+    ax.plot(common_times, g_avg_k_ho,
+            marker='o', color='blue', linestyle='None',
+            markersize=marker_size, mfc='none',
+            markevery=marker_frequency, label=r'Gillespie: Avg $k_{ho}$', zorder=1)
+    
     ax.set_xlabel("Time (t)", fontsize=plt_labels_fontsize)
     ax.set_ylabel("Number of Infected", fontsize=plt_labels_fontsize)
     ax.spines['top'].set_visible(False)
@@ -214,8 +224,7 @@ if __name__ == "__main__":
     ax.spines['left'].set_linewidth(1.5)
     ax.spines['bottom'].set_linewidth(1.5)
     
-    
-    # ax.legend(fontsize=plt_legend_fontsize, loc='lower right')
+    ax.legend(fontsize=plt_legend_fontsize, loc='lower right')
     ax.set_ylim(bottom=0)
     ax.set_xlim(left=0, right=time_max)
     ax.tick_params(axis='both', which='major', labelsize=plt_tick_fontsize)
