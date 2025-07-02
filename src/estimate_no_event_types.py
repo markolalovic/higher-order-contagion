@@ -6,6 +6,9 @@
 import numpy as np
 import matplotlib.pylab as plt
 
+from scipy.optimize import minimize
+from scipy.optimize import least_squares
+
 def sk1(k, N):
     r""" Calculates structural count $S_{k}^{(1)}$ for CSC. """
     if k <= 0 or k >= N:
@@ -113,7 +116,7 @@ def compute_likelihood_surface(b1_range, b2_range, stats, N, mu):
         "logL_surface": logL_surface
     }
 
-def plot_zoomed_likelihood(surface_data, true_params, threshold=-5.0):
+def plot_zoomed_likelihood(surface_data, true_params, threshold=-5.0, save_it=False):
     r"""
     Zoomed-in contour plot of the log-likelihood surface.
     threshold defines the distance from max for the zoom-in region.
@@ -176,8 +179,153 @@ def plot_zoomed_likelihood(surface_data, true_params, threshold=-5.0):
     ax.grid(True, linestyle='--', alpha=0.2)
     plt.tight_layout()
 
-    output_filename = "../figures/inference/no_event_log_likelihood_contour.pdf"
-    plt.savefig(output_filename, bbox_inches='tight')
-    print(f"Plot saved to {output_filename}")
+    if save_it:
+        output_filename = "../figures/inference/no_event_log_likelihood_contour.pdf"
+        plt.savefig(output_filename, bbox_inches='tight')
+        print(f"Plot saved to {output_filename}")
+    else: 
+        plt.show()
 
-    plt.show()
+def grid_search(stats, N, mu):
+    r"""
+    Finds the MLEs for beta1 and beta2 using a grid search given:
+    - stats: sufficient statistics T_k, B_k, D_k
+    """
+    # define the grid for the scaled parameters
+    beta1_s_min, beta1_s_max, beta1_s_steps = 0, 8.0, 100
+    beta2_s_min, beta2_s_max, beta2_s_steps = 0, 15.0, 100
+
+    beta1_scaled_vec = np.linspace(beta1_s_min, beta1_s_max, beta1_s_steps)
+    beta2_scaled_vec = np.linspace(beta2_s_min, beta2_s_max, beta2_s_steps)
+    
+    # compute log-likelihood over the grid
+    logL_surface = np.zeros((beta1_s_steps, beta2_s_steps))
+    
+    for i, b1_s in enumerate(beta1_scaled_vec):
+        for j, b2_s in enumerate(beta2_scaled_vec):
+            # convert scaled params to original for likelihood calculation
+            b1_orig = b1_s / N
+            b2_orig = b2_s / (N**2) 
+            logL_surface[i, j] = calculate_log_likelihood([b1_orig, b2_orig], stats, N, mu)
+
+    # find MLE on the evaluated grid
+    max_flat_idx = np.nanargmax(logL_surface)
+    max_idx_b1, max_idx_b2 = np.unravel_index(max_flat_idx, logL_surface.shape)
+    
+    beta1_hat = beta1_scaled_vec[max_idx_b1]
+    beta2_hat = beta2_scaled_vec[max_idx_b2]
+    
+    return beta1_hat, beta2_hat
+
+def estimate_dlm(stats, N, initial_guess):
+    """
+    Finds the MLE for beta1 and beta2 by direct maximization of the log-likelihood.
+    Done by minimizing the negative log-likelihood using an optimizer given:
+      - suff stats 
+      - initial guess TODO: could come from two-stage regression?
+    """
+    T_k = stats['T_k']
+    B_k = stats['B_k']
+    # D_k contribution to the likelihood wrt. beta is constant
+
+    # objective function: 
+    # the negative log-likelihood part that depends on beta1, beta2
+    def neg_log_likelihood(params):
+        beta1, beta2 = params
+        # must be non-negative
+        if beta1 < 0 or beta2 < 0:
+            return np.inf
+
+        logL = 0
+        for k in range(N + 1):
+            if T_k[k] > 0:
+                lambda_val = lambda_k(k, N, beta1, beta2)
+                
+                # contribution from observed births
+                if B_k[k] > 0:
+                    if lambda_val > 1e-12:
+                        logL += B_k[k] * np.log(lambda_val)
+                    else:
+                        print("Birth observed but rate is 0!")
+                        return np.inf
+                
+                # contribution from time spent in state k (exposure time)
+                logL -= lambda_val * T_k[k]
+                
+        return -logL
+
+    # constrained optimization: non-negative rates
+    # 'L-BFGS-B' supports bounds
+    result = minimize(
+        neg_log_likelihood,
+        x0=initial_guess,
+        method='L-BFGS-B',
+        bounds=[(1e-12, None), (1e-12, None)]
+    )
+
+    if not result.success:
+        print(f"DLM did not converge: {result.message}")
+    
+    beta1_scaled, beta2_scaled = result.x
+    beta1_hat = beta1_scaled * N
+    beta2_hat = beta2_scaled * (N**2) 
+
+    return beta1_hat, beta2_hat
+
+def estimate_tsr(stats, N, initial_guess):
+    r"""
+    Two-stage regression using weighted least squares:
+        1. stage: estimate birth rates $\lambda_k$ for each state $k$ visited
+        2. stage: fit $\beta_1 f_1(k) + \beta_2 f_2(k)$ to $(k, \lambda_k)$ points
+    
+    Approximate weights as $T_k$ since we do not know the true $\lambda_k$.
+
+    Initial guess:
+      * x0 = [0.01 / N, 0.01 / (N**2)]
+      * x0 = [1 / N, 1 / (N**2)]
+    """
+    T_k = stats['T_k']
+    B_k = stats['B_k']
+    
+    # Stage 1: estimate lambda_k for each k where T_k > 0
+    # consider only states  k \geq 2 since S_k^{2} = 0 otherwise
+    valid_k_indices = np.where((T_k > 1e-9) & (np.arange(N + 1) >= 2))[0]
+            
+    k_vals = valid_k_indices
+    lambda_hat_k = B_k[k_vals] / T_k[k_vals]
+
+    # Stage 2: weighted least squares regression
+    # minimize sum of weighted squared residuals 
+    # objective_fn = weights * (observed - predicted)^2
+    
+    # calculate predictors / features
+    f1_vals = np.array([sk1(k, N) for k in k_vals])
+    f2_vals = np.array([sk2(k, N) for k in k_vals])
+    
+    # define the weights 
+    # use T_k as it is proportional to the inverse of variance
+    weights = T_k[k_vals]
+
+    # objective function
+    def weighted_residuals(params):
+        beta1, beta2 = params
+        predicted_lambda = beta1 * f1_vals + beta2 * f2_vals
+        residuals = lambda_hat_k - predicted_lambda
+        return np.sqrt(weights) * residuals
+
+    # use least_squares 
+    # constrain parameters to non-negative values
+    result = least_squares(
+        weighted_residuals,
+        initial_guess,
+        bounds=([0, 0], [np.inf, np.inf])
+    )
+
+    if not result.success:
+        print("Weighted least-squares failed.")
+    
+    beta1_scaled, beta2_scaled = result.x
+    beta1_hat = beta1_scaled * N
+    beta2_hat = beta2_scaled * (N**2) 
+
+    return beta1_hat, beta2_hat
