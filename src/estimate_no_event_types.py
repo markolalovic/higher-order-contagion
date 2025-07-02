@@ -192,8 +192,9 @@ def grid_search(stats, N, mu):
     - stats: sufficient statistics T_k, B_k, D_k
     """
     # define the grid for the scaled parameters
-    beta1_s_min, beta1_s_max, beta1_s_steps = 0, 8.0, 100
-    beta2_s_min, beta2_s_max, beta2_s_steps = 0, 15.0, 100
+    n_steps = 50 # TODO: increase to 100
+    beta1_s_min, beta1_s_max, beta1_s_steps = 0, 8.0, n_steps
+    beta2_s_min, beta2_s_max, beta2_s_steps = 0, 15.0, n_steps
 
     beta1_scaled_vec = np.linspace(beta1_s_min, beta1_s_max, beta1_s_steps)
     beta2_scaled_vec = np.linspace(beta2_s_min, beta2_s_max, beta2_s_steps)
@@ -330,7 +331,7 @@ def estimate_tsr(stats, N, initial_guess):
 
     return beta1_hat, beta2_hat
 
-def estimate_em(stats, N, mu, initial_guess, max_iter=2000, tol=1e-9):
+def estimate_em(stats, N, initial_guess, max_iter=2000, tol=1e-9):
     r"""
     Derived EM algorithm to estimate betas, given:
       - stats: sufficient statistics T_k, B_k, D_k
@@ -379,7 +380,7 @@ def estimate_em(stats, N, mu, initial_guess, max_iter=2000, tol=1e-9):
         
         # check for convergence: relative change in parameters
         if abs(beta1_m - beta1_old) < tol and abs(beta2_m - beta2_old) < tol:
-            print(f"EM converged in {i + 1} iterations.")
+            # print(f"EM converged in {i + 1} iterations.")
             break
     
     beta1_hat = beta1_m * N

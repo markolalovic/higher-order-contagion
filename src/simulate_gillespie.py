@@ -13,7 +13,7 @@ from higher_order_structures import RandomHypergraph
 import pandas as pd
 import time
 
-def gillespie_sim_complete(N, beta1, beta2, mu, I0, time_max):
+def gillespie_sim_complete(N, beta1, beta2, mu, I0, time_max, rng=None):
     r""" 
     Gillespie algorithm to simulate SIS dynamics on complete (fully-connected) hypergraph ONLY. 
     
