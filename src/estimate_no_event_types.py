@@ -329,3 +329,60 @@ def estimate_tsr(stats, N, initial_guess):
     beta2_hat = beta2_scaled * (N**2) 
 
     return beta1_hat, beta2_hat
+
+def estimate_em(stats, N, mu, initial_guess, max_iter=2000, tol=1e-9):
+    r"""
+    Derived EM algorithm to estimate betas, given:
+      - stats: sufficient statistics T_k, B_k, D_k
+      - initial_guess
+      - max_iter: maximum number of iterations
+      - tol: tolerance for checking convergence
+    """
+    T_k = stats['T_k']
+    B_k = stats['B_k']
+    
+    # direct translation
+    # denominators for the M-step are constants
+    # sum_k S_k^(1) * T_k
+    denom1 = np.sum([sk1(k, N) * T_k[k] for k in range(N + 1)])
+    # sum_k S_k^(2) * T_k
+    denom2 = np.sum([sk2(k, N) * T_k[k] for k in range(N + 1)])
+
+    # check they are not zero
+    if denom1 <= 1e-12 or denom2 <= 1e-12:
+        print("Can not estimate: zero exposure time in the denominator.")
+        return np.nan, np.nan
+
+    beta1_m, beta2_m = initial_guess 
+    for i in range(max_iter):
+        beta1_old, beta2_old = beta1_m, beta2_m
+        
+        # E-Step: calculate conditional expected counts
+        exp_U_k = np.zeros(N + 1) # E[U_k]
+        exp_V_k = np.zeros(N + 1) # E[V_k]
+        for k in range(1, N):
+            if B_k[k] > 0: # only states from which births occured
+                a_k = beta1_m * sk1(k, N)
+                b_k = beta2_m * sk2(k, N)
+                lambda_total = lambda_k(k, N, beta1_m, beta2_m)
+                
+                if lambda_total > 1e-12:
+                    # E[U_k] = B_k * P(event is PW)
+                    exp_U_k[k] = B_k[k] * (a_k / lambda_total)
+
+                    # E[V_k] = B_k * P(event is HO)
+                    exp_V_k[k] = B_k[k] * (b_k / lambda_total)
+
+        # M-Step: update parameters using the expected counts
+        beta1_m = np.sum(exp_U_k) / denom1
+        beta2_m = np.sum(exp_V_k) / denom2
+        
+        # check for convergence: relative change in parameters
+        if abs(beta1_m - beta1_old) < tol and abs(beta2_m - beta2_old) < tol:
+            print(f"EM converged in {i + 1} iterations.")
+            break
+    
+    beta1_hat = beta1_m * N
+    beta2_hat = beta2_m * (N**2) 
+
+    return beta1_hat, beta2_hat
